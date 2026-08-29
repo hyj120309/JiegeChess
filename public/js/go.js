@@ -40,8 +40,8 @@ function onClick(e) {
 
 function rebar() {
   if (!bar) return;
-  bar.replaceChildren();
-  if (!state) return;
+while (bar.firstChild) bar.removeChild(bar.firstChild);
+    if (!state) return;
   if (state.gameover) {
     bar.innerHTML = '';
     return;
@@ -177,7 +177,9 @@ export const Go = {
     ctx = canvas.getContext('2d');
     bar = document.createElement('div');
     bar.className = 'go-bar';
-    el.replaceChildren(canvas, bar);
+    el.innerHTML = '';
+    el.appendChild(canvas);
+    el.appendChild(bar);
     setupScale();
     rebar();
     canvas.addEventListener('click', onClick);
@@ -198,7 +200,7 @@ export const Go = {
   },
   reset() {
     state = null;
-    bar && bar.replaceChildren();
+    if (bar) while (bar.firstChild) bar.removeChild(bar.firstChild);
     const info = document.getElementById('goInfo');
     if (info) info.style.display = 'none';
     draw();

@@ -22,6 +22,7 @@ function toast(msg, type) {
 function confirmDialog(title, msg) {
   return new Promise(resolve => {
     const dlg = $('#confirmDialog');
+    if (dlg.open) dlg.close();
     $('#confirmTitle').textContent = title;
     $('#confirmMsg').textContent = msg;
     dlg.showModal();

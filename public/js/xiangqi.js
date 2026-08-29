@@ -166,7 +166,8 @@ export const Xiangqi = {
     canvas = document.createElement('canvas');
     ctx = canvas.getContext('2d');
     api = a;
-    el.replaceChildren(canvas);
+    el.innerHTML = '';
+    el.appendChild(canvas);
     setupScale();
     canvas.addEventListener('click', onClick);
     sel = null; hints = [];
