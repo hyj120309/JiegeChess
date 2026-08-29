@@ -17,6 +17,10 @@ html, body {
 
 .hidden { display: none !important; }
 
+/* Override beercss main display behavior */
+body > main { display: block !important; }
+body > main.hidden { display: none !important; }
+
 /* ---------- Home ---------- */
 .hero {
   text-align: center;
@@ -152,9 +156,17 @@ html, body {
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ---------- Overlays ---------- */
+dialog {
+  background: #1d1e24; border: 1px solid #33353e;
+  border-radius: 22px; padding: 34px 40px; text-align: center;
+  max-width: 400px; width: calc(100% - 40px);
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  color: #f5f3ee;
+}
+dialog::backdrop { background: rgba(8,8,10,.72); }
 .overlay {
-  position: fixed; inset: 0; background: rgba(8,8,10,.72);
-  backdrop-filter: blur(4px);
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+  background: rgba(8,8,10,.72);
   display: flex; align-items: center; justify-content: center; z-index: 30;
 }
 .overlay.hidden { display: none; }

@@ -179,7 +179,7 @@ export const Xiangqi = {
     state = st;
     const mine = (api.you === 1) ? /[A-Z]/ : /[a-z]/;
     const keep = !st.gameover && st.turn === api.you && sel &&
-      state.board[sel.y]?.[sel.x] && mine.test(state.board[sel.y][sel.x]);
+      state.board[sel.y] && state.board[sel.y][sel.x] && mine.test(state.board[sel.y][sel.x]);
     if (keep) {
       api.send({ type: 'select', from: sel });
     } else { sel = null; hints = []; }

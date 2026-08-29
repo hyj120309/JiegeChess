@@ -28,7 +28,7 @@ function onClick(e) {
   if (x < 0 || y < 0 || x >= N || y >= N) return;
   if (!state) return;
   if (state.phase === 'scoring' && !state.gameover) {
-    const v = state.board[y]?.[x];
+    const v = state.board[y] && state.board[y][x];
     if (!v) return;
     const dead = !state.dead.some(d => d.x === x && d.y === y);
     api.send({ type: 'markDead', x, y, dead });

@@ -19,6 +19,21 @@ function toast(msg, type) {
   setTimeout(() => el.remove(), 2800);
 }
 
+function confirmDialog(title, msg) {
+  return new Promise(resolve => {
+    const dlg = $('#confirmDialog');
+    $('#confirmTitle').textContent = title;
+    $('#confirmMsg').textContent = msg;
+    dlg.showModal();
+    const ok = $('#confirmOk');
+    const cancel = $('#confirmCancel');
+    const cleanup = () => { dlg.close(); ok.onclick = null; cancel.onclick = null; };
+    ok.onclick = () => { cleanup(); resolve(true); };
+    cancel.onclick = () => { cleanup(); resolve(false); };
+    dlg.oncancel = () => { cleanup(); resolve(false); };
+  });
+}
+
 function sende(o) {
   if (net && net.readyState === 1) net.send(JSON.stringify(o));
 }
@@ -254,7 +269,8 @@ function createRoom(game) {
 function joinRoom() {
   const v = $('#joinRoom').value.trim();
   if (!/^\d{6}$/.test(v)) { toast('请输入 6 位房间号', 'err'); return; }
-  const game = $('#segGame button.on')?.dataset.g || 'gomoku';
+  const onBtn = $('#segGame button.on');
+  const game = (onBtn && onBtn.dataset.g) || 'gomoku';
   app.game = game;
   sende({ type: 'join', room: v, game, name: NAME });
   uiWait('正在加入房间 ' + prettyRoom(v) + ' …');
@@ -275,9 +291,9 @@ function exitRoom() {
   show('#view-home');
 }
 
-function destroyRoom() {
+async function destroyRoom() {
   if (!app.room) return;
-  if (!confirm('确定要销毁当前房间吗？所有玩家将被踢出。')) return;
+  if (!await confirmDialog('销毁房间', '确定要销毁当前房间吗？所有玩家将被踢出。')) return;
   sende({ type: 'destroy' });
 }
 
@@ -310,12 +326,12 @@ function bind() {
   $('#btnHome').addEventListener('click', () => exitRoom());
   $('#btnResultHome').addEventListener('click', () => exitRoom());
   $('#btnRematch').addEventListener('click', () => sende({ type: 'rematch' }));
-  $('#btnResign').addEventListener('click', () => {
+  $('#btnResign').addEventListener('click', async () => {
     if (!app.state || app.state.gameover) return;
-    if (confirm('确定认输本局吗？')) sende({ type: 'resign' });
+    if (await confirmDialog('认输', '确定认输本局吗？')) sende({ type: 'resign' });
   });
-  $('#btnDestroy')?.addEventListener('click', destroyRoom);
-  $('#btnDestroyWait')?.addEventListener('click', destroyRoom);
+  var el1 = $('#btnDestroy'); if (el1) el1.addEventListener('click', destroyRoom);
+  var el2 = $('#btnDestroyWait'); if (el2) el2.addEventListener('click', destroyRoom);
 }
 
 bind();
