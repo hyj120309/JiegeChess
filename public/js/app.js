@@ -132,8 +132,8 @@ function uiWait(text) {
 }
 
 // ---------------- views ----------------
-function show(q) { const el = $(q); if (el) el.classList.remove('hidden'); }
-function hide(q) { const el = $(q); if (el) el.classList.add('hidden'); }
+function show(q) { const el = $(q); if (el) { el.classList.remove('hidden'); el.classList.add('active'); } }
+function hide(q) { const el = $(q); if (el) { el.classList.add('hidden'); el.classList.remove('active'); } }
 
 function openGame() {
   show('#view-game');
