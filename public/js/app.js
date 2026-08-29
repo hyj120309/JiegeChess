@@ -298,7 +298,7 @@ function bind() {
   $('#segGame').addEventListener('click', e => {
     const b = e.target.closest('button');
     if (!b) return;
-    $('#segGame button').forEach(x => x.classList.remove('on'));
+    document.querySelectorAll('#segGame button').forEach(x => x.classList.remove('on'));
     b.classList.add('on');
   });
   $('#btnJoin').addEventListener('click', joinRoom);
