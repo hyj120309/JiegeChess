@@ -1,7 +1,7 @@
-const N = 15;
+const BOARD_SIZE = 15;
 const M = 30, CELL = 34;
-const W = M * 2 + (N - 1) * CELL;
-const H = M * 2 + (N - 1) * CELL;
+const W = M * 2 + (BOARD_SIZE - 1) * CELL;
+const H = M * 2 + (BOARD_SIZE - 1) * CELL;
 
 let canvas, ctx, api, state, myColor;
 
@@ -23,7 +23,7 @@ function cellFromEvent(e) {
 
 function onClick(e) {
   const [x, y] = cellFromEvent(e);
-  if (x < 0 || y < 0 || x >= N || y >= N) return;
+  if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE) return;
   if (!state || state.gameover) return;
   api.send({ type: 'move', x, y });
 }
@@ -35,13 +35,13 @@ function draw() {
 
   ctx.strokeStyle = 'rgba(90,60,25,.55)';
   ctx.lineWidth = 1;
-  for (let i = 0; i < N; i++) {
-    line(M + i * CELL, M, M + i * CELL, M + (N - 1) * CELL);
-    line(M, M + i * CELL, M + (N - 1) * CELL, M + i * CELL);
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    line(M + i * CELL, M, M + i * CELL, M + (BOARD_SIZE - 1) * CELL);
+    line(M, M + i * CELL, M + (BOARD_SIZE - 1) * CELL, M + i * CELL);
   }
   ctx.strokeStyle = 'rgba(90,60,25,.8)';
   ctx.lineWidth = 2.2;
-  ctx.strokeRect(M, M, (N - 1) * CELL, (N - 1) * CELL);
+  ctx.strokeRect(M, M, (BOARD_SIZE - 1) * CELL, (BOARD_SIZE - 1) * CELL);
 
   ctx.fillStyle = '#6b4a1f';
   for (const p of [3, 7, 11]) for (const q of [3, 7, 11]) {
@@ -50,7 +50,7 @@ function draw() {
 
   if (!state) return;
   const b = state.board;
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+  for (let y = 0; y < BOARD_SIZE; y++) for (let x = 0; x < BOARD_SIZE; x++) {
     if (b[y][x]) stone(x, y, b[y][x]);
   }
   if (state.last) {

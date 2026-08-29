@@ -1,4 +1,4 @@
-const N = 19;
+const GO_SIZE = 19;
 const M = 34, CELL = 34;
 const W = M * 2 + (N - 1) * CELL;
 const H = M * 2 + (N - 1) * CELL;
@@ -86,9 +86,9 @@ function draw() {
 
   ctx.strokeStyle = 'rgba(90,60,25,.6)';
   ctx.lineWidth = 1;
-  for (let i = 0; i < N; i++) {
-    line(M + i * CELL, M + (N - 1) * CELL, M + i * CELL, M);
-    line(M + (N - 1) * CELL, M + i * CELL, M, M + i * CELL);
+  for (let i = 0; i < GO_SIZE; i++) {
+    line(M + i * CELL, M + (GO_SIZE - 1) * CELL, M + i * CELL, M);
+    line(M + (GO_SIZE - 1) * CELL, M + i * CELL, M, M + i * CELL);
   }
   ctx.fillStyle = '#6b4a1f';
   for (const p of STAR) for (const q of STAR) {
@@ -112,7 +112,7 @@ function draw() {
   }
 
   const b = state.board;
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+  for (let y = 0; y < GO_SIZE; y++) for (let x = 0; x < GO_SIZE; x++) {
     if (b[y][x]) stone(M + x * CELL, M + y * CELL, b[y][x]);
   }
 
@@ -127,18 +127,18 @@ function paintTerritory() {
   const b = state.board.map(r => r.slice());
   for (const d of state.dead) b[d.y][d.x] = 0;
   const seen = new Set();
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-    const v = b[y][x];
-    if (v !== 0 || seen.has(y * N + x)) continue;
-    const queue = [[x, y]]; seen.add(y * N + x);
+for (let y = 0; y < GO_SIZE; y++) for (let x = 0; x < GO_SIZE; x++) {
+      const v = b[y][x];
+      if (v !== 0 || seen.has(y * GO_SIZE + x)) continue;
+    const queue = [[x, y]]; seen.add(y * GO_SIZE + x);
     const cells = []; const touched = new Set();
     while (queue.length) {
       const [cx, cy] = queue.shift(); cells.push([cx, cy]);
       for (const [dx, dy] of DIRS) {
         const nx = cx + dx, ny = cy + dy;
-        if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
+        if (nx < 0 || ny < 0 || nx >= GO_SIZE || ny >= GO_SIZE) continue;
         const w = b[ny][nx];
-        if (w === 0) { const k = ny * N + nx; if (!seen.has(k)) { seen.add(k); queue.push([nx, ny]); } }
+        if (w === 0) { const k = ny * GO_SIZE + nx; if (!seen.has(k)) { seen.add(k); queue.push([nx, ny]); } }
         else touched.add(w);
       }
     }
