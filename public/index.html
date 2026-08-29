@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JiegeChess - 在线联机棋类大厅</title>
+<link rel="stylesheet" href="/res/beercss/beer.min.css">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="dark">
+
+  <main id="view-home">
+    <div class="hero">
+      <div class="logo-big">
+        <img src="/img/logo.svg" alt="" style="width:52px;height:52px;border-radius:14px" onerror="this.remove()">
+        <h1>JiegeChess</h1>
+      </div>
+      <div class="sub">五子棋 · 中国象棋 · 围棋 — 创建房间，邀请好友在线对弈</div>
+    </div>
+
+    <div class="module-grid">
+      <div class="mcard" data-game="gomoku">
+        <div class="icon-area gomoku"><img src="/img/gomoku.svg" alt="五子棋" onerror="this.remove()">弈</div>
+        <h3>五子棋</h3>
+        <p>15×15 棋盘，先连成五子者胜。<br>黑白轮流落子，简单又烧脑。</p>
+        <button class="btn primary">创建房间</button>
+      </div>
+      <div class="mcard" data-game="xiangqi">
+        <div class="icon-area xiangqi"><img src="/img/xiangqi.svg" alt="中国象棋" onerror="this.remove()">帅</div>
+        <h3>中国象棋</h3>
+        <p>楚河汉界，车马炮相士帅。<br>点击棋子再点击落点，将军夺帅。</p>
+        <button class="btn primary">创建房间</button>
+      </div>
+      <div class="mcard" data-game="go">
+        <div class="icon-area go"><img src="/img/go.svg" alt="围棋" onerror="this.remove()">智</div>
+        <h3>围棋</h3>
+        <p>19×19 星罗棋布，提子落子。<br>双方停一手后点目定胜负。</p>
+        <button class="btn primary">创建房间</button>
+      </div>
+    </div>
+
+    <div class="join-card">
+      <div class="inner">
+        <h4 style="margin:0 0 4px;color:#cfd3da">加入好友的房间</h4>
+        <div class="join-row">
+          <input id="joinRoom" maxlength="6" inputmode="numeric" placeholder="输入 6 位房间号" autocomplete="off">
+          <div class="seg-game" id="segGame">
+            <button data-g="gomoku" class="on">五子棋</button>
+            <button data-g="xiangqi">象棋</button>
+            <button data-g="go">围棋</button>
+          </div>
+          <button class="btn primary" id="btnJoin">加入房间</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <main id="view-game" class="hidden">
+    <nav class="topbar">
+      <span class="brand" id="btnHome">♞ JiegeChess</span>
+      <span class="room-pill" id="roomPill" title="点击复制链接">房间 · <b id="roomChip">——</b></span>
+      <span class="status-pill"><span class="dot" id="dot"></span><span id="statusText">连接中…</span></span>
+      <button class="btn danger small" id="btnResign">认输</button>
+      <button class="btn danger small" id="btnDestroy">销毁房间</button>
+      <button class="btn ghost small" id="btnExit">退出</button>
+    </nav>
+
+    <div class="game-body">
+      <div class="board-panel" id="boardWrap"></div>
+      <aside class="side-panel">
+        <div class="player-card active" id="cardYou">
+          <div class="who">你</div>
+          <div class="nm" id="youName"></div>
+        </div>
+        <div class="player-card" id="cardOpp">
+          <div class="who">对手</div>
+          <div class="nm" id="oppName"></div>
+        </div>
+        <div class="tip-card">
+          <h4>操作提示</h4>
+          <div id="tipText">——</div>
+        </div>
+        <div class="tip-card" id="goInfo" style="display:none">
+          <h4>对局信息</h4>
+          <div id="goStats"></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <div class="overlay hidden" id="overlayWait">
+    <div class="box">
+      <div class="spinner"></div>
+      <h3 style="margin:0">创建成功，等待对手加入…</h3>
+      <div id="waitTitle"></div>
+      <div class="big-room" id="waitRoom">—— —— ——</div>
+      <div class="room-hint">让好友在首页输入房间号，或分享下面的链接</div>
+      <div class="room-hint" id="waitLink" style="word-break:break-all;color:#9a9dff"></div>
+      <div class="opts">
+        <button class="btn ghost" id="btnCopyWait">复制房间链接</button>
+        <button class="btn ghost" id="btnCancelWait">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="overlayResult">
+    <div class="box">
+      <div class="result-emoji" id="resEmoji"></div>
+      <div class="result-title" id="resTitle"></div>
+      <div class="result-sub" id="resSub"></div>
+      <div class="opts">
+        <button class="btn primary" id="btnRematch">再来一局</button>
+        <button class="btn ghost" id="btnResultHome">返回大厅</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toasts"></div>
+
+  <script src="/res/beercss/beer.min.js"></script>
+  <script src="/res/beercss/material-dynamic-colors.min.js"></script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
