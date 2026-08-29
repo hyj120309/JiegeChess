@@ -178,8 +178,10 @@ function handleMessage(ws, raw) {
       if (!r) return send(ws, { type: 'notfound', room: rid });
       let idx = r.tokens[0] === msg.token ? 0 : r.tokens[1] === msg.token ? 1 : -1;
       if (idx < 0) return send(ws, { type: 'forbidden' });
-      if (r.players[idx] && r.players[idx].readyState === WebSocket.OPEN && r.players[idx] !== ws)
-        return send(ws, { type: 'error', msg: '该账号已在其他标签页连接' });
+      // 强制替换旧连接（支持刷新页面重连）
+      if (r.players[idx] && r.players[idx] !== ws) {
+        try { r.players[idx].close(1000, 'replaced'); } catch {}
+      }
       r.players[idx] = ws;
       ws.room = r;
       send(ws, {

@@ -315,6 +315,7 @@ function bind() {
     if (confirm('确定认输本局吗？')) sende({ type: 'resign' });
   });
   $('#btnDestroy')?.addEventListener('click', destroyRoom);
+  $('#btnDestroyWait')?.addEventListener('click', destroyRoom);
 }
 
 bind();
