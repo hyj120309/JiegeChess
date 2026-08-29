@@ -163,7 +163,7 @@ html, body {
   border-radius: 22px; padding: 34px 40px; text-align: center; max-width: 440px; width: calc(100% - 40px);
   box-shadow: 0 20px 60px rgba(0,0,0,.6);
 }
-.overlay .big-room { font-size: 54px; font-weight: 800; letter-spacing: 8px; margin: 10px 0 4px; color: #ffd54f; font-variant-numeric: tabular-nums; }
+.overlay .big-room { font-size: 36px; font-weight: 800; letter-spacing: 6px; margin: 6px 0; color: #ffd54f; font-variant-numeric: tabular-nums; }
 .overlay .room-hint { color: #9aa0a6; font-size: 14px; }
 .overlay .opts { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
 .spinner {
