@@ -102,8 +102,11 @@ function onMsg(m) {
       handleOppLeft();
       break;
     case 'roomDestroyed':
-      toast('房间已被房主销毁');
-      exitRoom();
+      toast('房间已销毁');
+      app.room = null;
+      hide('#overlayWait');
+      hide('#view-game');
+      show('#view-home');
       break;
     case 'notfound': hideWait(); toast('房间不存在，请检查房间号'); break;
     case 'full': hideWait(); toast('房间已满，无法加入'); break;
@@ -264,7 +267,7 @@ function createRoom(game) {
   $('#waitRoom').textContent = '—— —— ——';
   $('#waitLink').textContent = '';
   $('#btnCopyWait').textContent = '复制房间链接';
-  $('#btnCancelWait').textContent = '取消';
+  $('#btnCancelWait').textContent = '销毁房间';
 }
 
 function joinRoom() {
@@ -277,25 +280,19 @@ function joinRoom() {
   uiWait('正在加入房间 ' + prettyRoom(v) + ' …');
   $('#waitRoom').textContent = prettyRoom(v);
   $('#waitLink').textContent = '';
-  $('#btnCancelWait').textContent = '取消加入';
+  $('#btnCancelWait').textContent = '销毁房间';
   $('#btnCopyWait').style.display = 'none';
 }
 
 function exitRoom() {
   if (app.module && app.module.reset) { try { app.module.reset(); } catch {} }
-  if (app.room) sende({ type: 'leave' });
+  if (app.room) sende({ type: 'destroy' });
   app.room = null; app.game = null; app.token = null; app.module = null; app.state = null;
   clearSession();
   hide('#overlayWait');
   hide('#overlayResult');
   hide('#view-game');
   show('#view-home');
-}
-
-async function destroyRoom() {
-  if (!app.room) return;
-  if (!await confirmDialog('销毁房间', '确定要销毁当前房间吗？所有玩家将被踢出。')) return;
-  sende({ type: 'destroy' });
 }
 
 function copyRoomLink() {
@@ -331,8 +328,7 @@ function bind() {
     if (!app.state || app.state.gameover) return;
     if (await confirmDialog('认输', '确定认输本局吗？')) sende({ type: 'resign' });
   });
-  var el1 = $('#btnDestroy'); if (el1) el1.addEventListener('click', destroyRoom);
-  var el2 = $('#btnDestroyWait'); if (el2) el2.addEventListener('click', destroyRoom);
+  // btnDestroy removed - exit now handles destroy
 }
 
 bind();
