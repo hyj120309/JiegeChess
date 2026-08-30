@@ -1,7 +1,7 @@
-import { Gomoku } from './gomoku.js';
-import { Xiangqi } from './xiangqi.js';
-import { Go } from './go.js';
-import { getSession, saveSession, clearSession } from './db.js';
+import { Gomoku } from './gomoku.js?v=2';
+import { Xiangqi } from './xiangqi.js?v=2';
+import { Go } from './go.js?v=2';
+import { getSession, saveSession, clearSession } from './db.js?v=2';
 
 const $ = (q, r = document) => r.querySelector(q);
 const MODULES = { gomoku: Gomoku, xiangqi: Xiangqi, go: Go };
