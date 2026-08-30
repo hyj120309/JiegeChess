@@ -211,6 +211,7 @@ function handleMessage(ws, raw) {
       if (room.state.gameover || room.state.turn !== player) return;
       const h = GAMES.xiangqi.hints(room.state.board, player)
         .filter(m => m.from.x === msg.from?.x && m.from.y === msg.from?.y);
+      console.log(`[xiangqi] select: player=${player} turn=${room.state.turn} from=(${msg.from?.x},${msg.from?.y}) hints=${h.length}`);
       send(ws, { type: 'hints', from: msg.from, to: h.map(m => m.to) });
       break;
     }
