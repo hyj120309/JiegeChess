@@ -67,16 +67,16 @@ while (bar.firstChild) bar.removeChild(bar.firstChild);
     goBtn.className = 'btn ghost small';
     goBtn.textContent = '继续对局';
     goBtn.onclick = () => api.send({ type: 'resumeGame' });
-    bt.append(ok, goBtn);
-    bar.append(t, bt);
+    bt.appendChild(ok); bt.appendChild(goBtn);
+    bar.appendChild(t); bar.appendChild(bt);
     return;
   }
   const pass = document.createElement('button');
   pass.className = 'btn ghost small';
   pass.textContent = '停一手（Pass）';
   pass.onclick = () => api.send({ type: 'pass' });
-  bt.append(pass);
-  bar.append(bt);
+  bt.appendChild(pass);
+  bar.appendChild(bt);
 }
 
 function draw() {
