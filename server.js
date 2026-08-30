@@ -208,16 +208,17 @@ function handleMessage(ws, raw) {
     case 'select': {
       if (!room || room.game !== 'xiangqi') return;
       const player = room.players[0] === ws ? 1 : 2;
-      const fx = msg.from?.x, fy = msg.from?.y;
-      const piece = room.state.board[fy]?.[fx] || '?';
+      const fromObj = msg.from || {};
+      const fx = +fromObj.x, fy = +fromObj.y;
+      const piece = (room.state.board[fy] && room.state.board[fy][fx]) || '?';
       if (room.state.gameover || room.state.turn !== player) {
         console.log(`[xiangqi] select REJECTED: player=${player} turn=${room.state.turn} from=(${fx},${fy}) piece=${piece}`);
         return;
       }
       const allMoves = GAMES.xiangqi.hints(room.state.board, player);
       const h = allMoves.filter(m => m.from.x === fx && m.from.y === fy);
-      console.log(`[xiangqi] select: player=${player} turn=${room.state.turn} from=(${fx},${fy}) piece=${piece} allMoves=${allMoves.length} filtered=${h.length}`);
-      send(ws, { type: 'hints', from: msg.from, to: h.map(m => m.to) });
+      console.log(`[xiangqi] select: player=${player} turn=${room.state.turn} from=(${fx},${fy}) piece=${piece} allMoves=${allMoves.length} filtered=${h.length} msgFromType=${typeof fromObj.x}`);
+      send(ws, { type: 'hints', from: { x: fx, y: fy }, to: h.map(m => m.to) });
       break;
     }
     case 'pass': {
