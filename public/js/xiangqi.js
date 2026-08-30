@@ -93,18 +93,22 @@ function draw() {
     mark(to.x, to.y, '#797fce');
   }
 
-  ctx.fillStyle = 'rgba(30,120,60,.75)';
-  if (sel) {
-    for (const h of hints) {
-      const [px, py] = cellPt(h.x, h.y);
-      ctx.beginPath(); ctx.arc(px, py, 7, 0, 7); ctx.fill();
-    }
-  }
-
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     const ch = state.board[y][x];
     if (ch === '.') continue;
     piece(x, y, ch);
+  }
+
+  // 绿点画在棋子之上，方便看到可吃子位置
+  ctx.fillStyle = 'rgba(30,120,60,.85)';
+  if (sel) {
+    for (const h of hints) {
+      const [px, py] = cellPt(h.x, h.y);
+      ctx.beginPath(); ctx.arc(px, py, 8, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.6)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(px, py, 8, 0, 7); ctx.stroke();
+    }
   }
 
   if (sel && state.board[sel.y] && state.board[sel.y][sel.x] !== '.') {
