@@ -209,9 +209,9 @@ function handleMessage(ws, raw) {
       if (!room || room.game !== 'xiangqi') return;
       const player = room.players[0] === ws ? 1 : 2;
       if (room.state.gameover || room.state.turn !== player) return;
-      const h = GAMES.xiangqi.hints(room.state.board, player)
-        .filter(m => m.from.x === msg.from?.x && m.from.y === msg.from?.y);
-      console.log(`[xiangqi] select: player=${player} turn=${room.state.turn} from=(${msg.from?.x},${msg.from?.y}) hints=${h.length}`);
+      const allMoves = GAMES.xiangqi.hints(room.state.board, player);
+      const h = allMoves.filter(m => m.from.x === msg.from?.x && m.from.y === msg.from?.y);
+      console.log(`[xiangqi] select: player=${player} turn=${room.state.turn} from=(${msg.from?.x},${msg.from?.y}) piece=${room.state.board[msg.from?.y]?.[msg.from?.x]} allMoves=${allMoves.length} filtered=${h.length}`);
       send(ws, { type: 'hints', from: msg.from, to: h.map(m => m.to) });
       break;
     }

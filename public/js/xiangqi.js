@@ -29,22 +29,24 @@ function ptToCell(e) {
 function cellPt(x, y) { return [M + x * CELL, M + y * CELL]; }
 
 function onClick(e) {
-  const c = ptToCell(e);
-  if (!c) return;
-  if (!state || state.gameover) return;
+    const c = ptToCell(e);
+    if (!c) return;
+    if (!state || state.gameover) return;
 
-  if (sel && hints.some(h => h.x === c.x && h.y === c.y)) {
-    api.send({ type: 'move', move: { from: sel, to: c } });
-    sel = null; hints = [];
-    return;
+    if (sel && hints.some(h => h.x === c.x && h.y === c.y)) {
+      api.send({ type: 'move', move: { from: sel, to: c } });
+      sel = null; hints = [];
+      return;
+    }
+    const ch = state.board[c.y][c.x];
+    if (ch === '.') { sel = null; hints = []; return; }
+    const you = api.you();
+    const mine = (you === 1) ? /[A-Z]/ : /[a-z]/;
+    console.log('[xiangqi click]', 'you=' + you, 'ch=' + ch, 'match=' + mine.test(ch));
+    if (!mine.test(ch)) { sel = null; hints = []; return; }
+    sel = c;
+    api.send({ type: 'select', from: c });
   }
-  const ch = state.board[c.y][c.x];
-  if (ch === '.') { sel = null; hints = []; return; }
-  const mine = (api.you === 1) ? /[A-Z]/ : /[a-z]/;
-  if (!mine.test(ch)) { sel = null; hints = []; return; }
-  sel = c;
-  api.send({ type: 'select', from: c });
-}
 
 function draw() {
   ctx.clearRect(0, 0, W, H);
