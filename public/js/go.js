@@ -5,7 +5,7 @@ const H = M * 2 + (GO_SIZE - 1) * CELL;
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const STAR = [3, 9, 15];
 
-let canvas, ctx, api, state, bar;
+let canvas, ctx, api, state, bar, pending = null, confirmBtn;
 
 function setupScale() {
   const dpr = window.devicePixelRatio || 1;
@@ -25,7 +25,7 @@ function cellFromEvent(e) {
 
 function onClick(e) {
   const [x, y] = cellFromEvent(e);
-  if (x < 0 || y < 0 || x >= N || y >= N) return;
+  if (x < 0 || y < 0 || x >= GO_SIZE || y >= GO_SIZE) return;
   if (!state) return;
   if (state.phase === 'scoring' && !state.gameover) {
     const v = state.board[y] && state.board[y][x];
@@ -35,7 +35,10 @@ function onClick(e) {
     return;
   }
   if (state.gameover) return;
-  api.send({ type: 'move', x, y });
+  if (state.turn !== api.you()) return;
+  pending = { x, y };
+  confirmBtn.style.display = '';
+  draw();
 }
 
 function rebar() {
@@ -121,6 +124,12 @@ function draw() {
     ctx.fillStyle = state.last.color === 1 ? '#ffd54f' : '#263238';
     ctx.beginPath(); ctx.arc(px, py, CELL * 0.12, 0, 7); ctx.fill();
   }
+  // 预览落子位置
+  if (pending && state.phase === 'play' && state.turn === api.you()) {
+    ctx.globalAlpha = 0.5;
+    stone(M + pending.x * CELL, M + pending.y * CELL, api.you());
+    ctx.globalAlpha = 1;
+  }
 }
 
 function paintTerritory() {
@@ -177,15 +186,29 @@ export const Go = {
     ctx = canvas.getContext('2d');
     bar = document.createElement('div');
     bar.className = 'go-bar';
+    confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn primary small';
+    confirmBtn.textContent = '确认落子';
+    confirmBtn.style.cssText = 'display:none;margin:10px auto 0';
+    confirmBtn.onclick = () => {
+      if (!pending) return;
+      api.send({ type: 'move', x: pending.x, y: pending.y });
+      pending = null;
+      confirmBtn.style.display = 'none';
+    };
     el.innerHTML = '';
     el.appendChild(canvas);
+    el.appendChild(confirmBtn);
     el.appendChild(bar);
+    pending = null;
     setupScale();
     rebar();
     canvas.addEventListener('click', onClick);
   },
   onState(st) {
     state = st;
+    pending = null;
+    if (confirmBtn) confirmBtn.style.display = 'none';
     rebar();
     const info = document.getElementById('goInfo');
     const stats = document.getElementById('goStats');

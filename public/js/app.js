@@ -1,11 +1,11 @@
 import { Gomoku } from './gomoku.js?v=2';
 import { Xiangqi } from './xiangqi.js?v=2';
 import { Go } from './go.js?v=2';
-import { getSession, saveSession, clearSession } from './db.js?v=2';
+import { getSession, saveSession, clearSession, getNickname, saveNickname } from './db.js?v=2';
 
 const $ = (q, r = document) => r.querySelector(q);
 const MODULES = { gomoku: Gomoku, xiangqi: Xiangqi, go: Go };
-const NAME = '玩家' + Math.floor(100 + Math.random() * 900);
+let NAME = '玩家' + Math.floor(100 + Math.random() * 900);
 
 const app = { room: null, game: null, token: null, you: 1, opponent: '', module: null, state: null };
 let net = null;
@@ -306,6 +306,10 @@ function hideWait() { hide('#overlayWait'); }
 
 // ---------------- wiring ----------------
 function bind() {
+  $('#nickname').addEventListener('change', function () {
+    const v = this.value.trim();
+    if (v) { NAME = v; saveNickname(v); }
+  });
   document.querySelectorAll('.mcard').forEach(c => {
     c.addEventListener('click', () => createRoom(c.dataset.game));
   });
@@ -330,6 +334,15 @@ function bind() {
   });
   // btnDestroy removed - exit now handles destroy
 }
+
+// 加载昵称
+getNickname().then(nick => {
+  if (nick) {
+    NAME = nick;
+    const inp = $('#nickname');
+    if (inp) inp.value = nick;
+  }
+});
 
 bind();
 connect();

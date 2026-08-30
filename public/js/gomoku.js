@@ -3,7 +3,7 @@ const M = 30, CELL = 34;
 const W = M * 2 + (BOARD_SIZE - 1) * CELL;
 const H = M * 2 + (BOARD_SIZE - 1) * CELL;
 
-let canvas, ctx, api, state, myColor;
+let canvas, ctx, api, state, myColor, pending = null, confirmBtn;
 
 function setupScale() {
   const dpr = window.devicePixelRatio || 1;
@@ -25,7 +25,17 @@ function onClick(e) {
   const [x, y] = cellFromEvent(e);
   if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE) return;
   if (!state || state.gameover) return;
-  api.send({ type: 'move', x, y });
+  if (state.turn !== api.you()) return;
+  pending = { x, y };
+  confirmBtn.style.display = '';
+  draw();
+}
+
+function confirmMove() {
+  if (!pending) return;
+  api.send({ type: 'move', x: pending.x, y: pending.y });
+  pending = null;
+  confirmBtn.style.display = 'none';
 }
 
 function draw() {
@@ -68,6 +78,12 @@ function draw() {
     ctx.lineTo(M + z.x * CELL, M + z.y * CELL);
     ctx.stroke();
   }
+  // 预览落子位置
+  if (pending && state.turn === api.you()) {
+    ctx.globalAlpha = 0.5;
+    stone(pending.x, pending.y, api.you());
+    ctx.globalAlpha = 1;
+  }
 }
 
 function stone(x, y, c) {
@@ -91,20 +107,29 @@ function line(x1, y1, x2, y2) {
 
 export const Gomoku = {
   mount(el, a) {
+    api = a;
     canvas = document.createElement('canvas');
     ctx = canvas.getContext('2d');
-    api = a;
     el.innerHTML = '';
     el.appendChild(canvas);
+    confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn primary small';
+    confirmBtn.textContent = '确认落子';
+    confirmBtn.style.cssText = 'display:none;margin:10px auto 0';
+    confirmBtn.onclick = confirmMove;
+    el.appendChild(confirmBtn);
+    pending = null;
     setupScale();
     canvas.addEventListener('click', onClick);
   },
   onState(st) {
     state = st;
-    myColor = api.you === 1 ? '黑方' : '白方';
+    myColor = api.you() === 1 ? '黑方' : '白方';
+    pending = null;
+    confirmBtn.style.display = 'none';
     draw();
   },
-  reset() { state = null; draw(); },
+  reset() { state = null; pending = null; if (confirmBtn) confirmBtn.style.display = 'none'; draw(); },
   title: '五子棋',
   myColorText: () => myColor
 };

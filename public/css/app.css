@@ -131,6 +131,7 @@ body > main.hidden { display: none !important; }
 }
 .board-panel canvas { display: block; max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.5); }
 .board-panel .go-bar { text-align: center; margin-top: 12px; }
+.board-panel .btn { display: block; margin: 10px auto 0; }
 
 .side-panel { width: 250px; display: flex; flex-direction: column; gap: 14px; }
 .player-card {

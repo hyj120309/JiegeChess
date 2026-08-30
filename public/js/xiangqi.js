@@ -7,7 +7,7 @@ const PIECE_NAMES = {
   H: '马', h: '马', R: '车', r: '车', C: '炮', c: '炮', P: '兵', p: '卒'
 };
 
-let canvas, ctx, api, state, sel = null, hints = [];
+let canvas, ctx, api, state, sel = null, hints = [], pending = null, confirmBtn;
 
 function setupScale() {
   const dpr = window.devicePixelRatio || 1;
@@ -32,19 +32,22 @@ function onClick(e) {
     const c = ptToCell(e);
     if (!c) return;
     if (!state || state.gameover) return;
+    if (state.turn !== api.you()) return;
 
     if (sel && hints.some(h => h.x === c.x && h.y === c.y)) {
-      api.send({ type: 'move', move: { from: sel, to: c } });
-      sel = null; hints = [];
+      pending = { from: sel, to: c };
+      confirmBtn.style.display = '';
+      draw();
       return;
     }
     const ch = state.board[c.y][c.x];
-    if (ch === '.') { sel = null; hints = []; return; }
+    if (ch === '.') { sel = null; hints = []; pending = null; confirmBtn.style.display = 'none'; return; }
     const you = api.you();
     const mine = (you === 1) ? /[A-Z]/ : /[a-z]/;
-    console.log('[xiangqi click]', 'you=' + you, 'ch=' + ch, 'match=' + mine.test(ch));
-    if (!mine.test(ch)) { sel = null; hints = []; return; }
+    if (!mine.test(ch)) { sel = null; hints = []; pending = null; confirmBtn.style.display = 'none'; return; }
     sel = c;
+    pending = null;
+    confirmBtn.style.display = 'none';
     api.send({ type: 'select', from: c });
   }
 
@@ -169,14 +172,25 @@ function line(x1, y1, x2, y2) {
 
 export const Xiangqi = {
   mount(el, a) {
+    api = a;
     canvas = document.createElement('canvas');
     ctx = canvas.getContext('2d');
-    api = a;
     el.innerHTML = '';
     el.appendChild(canvas);
+    confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn primary small';
+    confirmBtn.textContent = '确认走子';
+    confirmBtn.style.cssText = 'display:none;margin:10px auto 0';
+    confirmBtn.onclick = () => {
+      if (!pending) return;
+      api.send({ type: 'move', move: pending });
+      sel = null; hints = []; pending = null;
+      confirmBtn.style.display = 'none';
+    };
+    el.appendChild(confirmBtn);
+    sel = null; hints = []; pending = null;
     setupScale();
     canvas.addEventListener('click', onClick);
-    sel = null; hints = [];
   },
   onHints(m) {
     sel = m.from; hints = m.to || [];
@@ -184,14 +198,11 @@ export const Xiangqi = {
   },
   onState(st) {
     state = st;
-    const mine = (api.you === 1) ? /[A-Z]/ : /[a-z]/;
-    // 如果已经轮到对手，清除选中
-    if (st.gameover || st.turn !== api.you) {
-      sel = null; hints = [];
-    }
+    sel = null; hints = []; pending = null;
+    if (confirmBtn) confirmBtn.style.display = 'none';
     draw();
   },
-  reset() { state = null; sel = null; hints = []; draw(); },
+  reset() { state = null; sel = null; hints = []; pending = null; if (confirmBtn) confirmBtn.style.display = 'none'; draw(); },
   title: '中国象棋',
   myColorText: () => api.you === 1 ? '红方' : '黑方'
 };
