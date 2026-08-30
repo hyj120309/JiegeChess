@@ -1,7 +1,7 @@
 const GO_SIZE = 19;
 const M = 34, CELL = 34;
-const W = M * 2 + (N - 1) * CELL;
-const H = M * 2 + (N - 1) * CELL;
+const W = M * 2 + (GO_SIZE - 1) * CELL;
+const H = M * 2 + (GO_SIZE - 1) * CELL;
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const STAR = [3, 9, 15];
 
