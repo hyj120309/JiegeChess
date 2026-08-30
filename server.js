@@ -208,10 +208,15 @@ function handleMessage(ws, raw) {
     case 'select': {
       if (!room || room.game !== 'xiangqi') return;
       const player = room.players[0] === ws ? 1 : 2;
-      if (room.state.gameover || room.state.turn !== player) return;
+      const fx = msg.from?.x, fy = msg.from?.y;
+      const piece = room.state.board[fy]?.[fx] || '?';
+      if (room.state.gameover || room.state.turn !== player) {
+        console.log(`[xiangqi] select REJECTED: player=${player} turn=${room.state.turn} from=(${fx},${fy}) piece=${piece}`);
+        return;
+      }
       const allMoves = GAMES.xiangqi.hints(room.state.board, player);
-      const h = allMoves.filter(m => m.from.x === msg.from?.x && m.from.y === msg.from?.y);
-      console.log(`[xiangqi] select: player=${player} turn=${room.state.turn} from=(${msg.from?.x},${msg.from?.y}) piece=${room.state.board[msg.from?.y]?.[msg.from?.x]} allMoves=${allMoves.length} filtered=${h.length}`);
+      const h = allMoves.filter(m => m.from.x === fx && m.from.y === fy);
+      console.log(`[xiangqi] select: player=${player} turn=${room.state.turn} from=(${fx},${fy}) piece=${piece} allMoves=${allMoves.length} filtered=${h.length}`);
       send(ws, { type: 'hints', from: msg.from, to: h.map(m => m.to) });
       break;
     }
