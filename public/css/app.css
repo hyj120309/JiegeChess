@@ -137,7 +137,7 @@ body > main.hidden { display: none !important; }
 }
 .board-panel canvas { display: block; max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.5); }
 .board-panel .go-bar { text-align: center; margin-top: 12px; }
-.board-panel .btn { display: block; margin: 10px auto 0; }
+.board-panel > .btn { display: block; margin: 10px auto 0; } /* 仅直接子级(棋类确认按钮), 不影响.card-actions内牌类按钮 */
 
 .side-panel { width: 250px; display: flex; flex-direction: column; }
 .side-panel > * + * { margin-top: 14px; }

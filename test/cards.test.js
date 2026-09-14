@@ -89,5 +89,44 @@ const fh1 = st1.hands[st1.firstSeat];
 ok('首手玩家持有♠3', fh1.indexOf(0) >= 0);
 ok('首手玩家出♠3单张被接受', PDK.applyMove(st1, st1.firstSeat + 1, { action: 'play', cards: [0] }).ok);
 
+// ---------- 提示: 飞机/四带二同型搜索 (M2回归) ----------
+console.log('== findHint 飞机/四带二 ==');
+// 飞机不带
+const oppPlane = [12, 13, 14, 16, 17, 18]; // 333 444
+const myPlane = [20, 21, 22, 24, 25, 26, 8]; // 555 666 + 4
+const hPlane = C.findHint(myPlane, oppPlane);
+ok('同型飞机可提示', hPlane && C.parse(hPlane) && C.parse(hPlane).type === 'plane', hPlane);
+ok('提示飞机rank正确(5>3)', hPlane && C.parse(hPlane).rank === C.rankOf(20), hPlane && C.parse(hPlane));
+// 飞机带单
+const oppP1 = [12, 13, 14, 16, 17, 18, 30, 40]; // 333444+8+J
+const myP1 = [20, 21, 22, 24, 25, 26, 34, 44]; // 555666+9+K
+const hP1 = C.findHint(myP1, oppP1);
+ok('同型飞机带单可提示', hP1 && C.parse(hP1) && C.parse(hP1).type === 'plane1', hP1);
+ok('飞机带单张数正确(6+2=8)', hP1 && hP1.length === 8, hP1 && hP1.length);
+// 飞机带对
+const oppP2 = [12, 13, 14, 16, 17, 18, 30, 31, 40, 41]; // 333444+88+JJ
+const myP2 = [20, 21, 22, 24, 25, 26, 34, 35, 44, 45]; // 555666+99+KK
+const hP2 = C.findHint(myP2, oppP2);
+ok('同型飞机带对可提示', hP2 && C.parse(hP2) && C.parse(hP2).type === 'plane2', hP2);
+// 四带二(两单): K=rank10, A=rank11
+const oppF2 = [40, 41, 42, 43, 8, 12]; // KKKK+3+4
+const myF2 = [44, 45, 46, 47, 20, 24]; // AAAA+5+6
+const hF2 = C.findHint(myF2, oppF2);
+ok('同型四带二可提示', hF2 && C.parse(hF2) && C.parse(hF2).type === 'four2', hF2);
+ok('四带二不再浪费炸弹', hF2 && C.parse(hF2).type === 'four2', hF2 && C.parse(hF2) && C.parse(hF2).type);
+// 四带二对
+const oppF4 = [40, 41, 42, 43, 8, 9, 12, 13]; // KKKK+33+44
+const myF4 = [44, 45, 46, 47, 20, 21, 24, 25]; // AAAA+55+66
+const hF4 = C.findHint(myF4, oppF4);
+ok('同型四带二对可提示', hF4 && C.parse(hF4) && C.parse(hF4).type === 'four2pair', hF4);
+// 无同型时仍走炸弹兜底
+const noPlane = [8, 12, 16]; // 无三张
+const hNo = C.findHint(noPlane, oppPlane);
+ok('无飞机可压返回null', hNo === null, hNo);
+// 压不过更大飞机 → 炸弹兜底
+const myBomb = [20, 21, 22, 24, 25, 26, 4, 5, 6, 7]; // 555666+小牌 + 无炸弹... 加炸弹
+const hBomb = C.findHint([48, 49, 50, 51, 0], oppPlane); // 2222炸弹
+ok('压不过时给炸弹', hBomb && C.parse(hBomb).type === 'bomb', hBomb);
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

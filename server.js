@@ -253,6 +253,7 @@ function handleMessage(ws, raw) {
     case 'move': {
       if (!room) return send(ws, { type: 'error', msg: '不在房间中' });
       if (!room.state) return send(ws, { type: 'error', msg: '对局尚未开始' });
+      if (ws.seat == null) return send(ws, { type: 'error', msg: '座位信息异常，请重新进入房间' }); // 防御: seat缺失时player=NaN
       const seat = ws.seat;
       const mod = room.game ? GAMES[room.game].mod : null;
       if (mod) {
@@ -365,12 +366,6 @@ function handleMessage(ws, raw) {
       if (room) closeRoom(room, 'leave');
       break;
     }
-  }
-}
-
-function broadcast(room, payload) {
-  for (const ws of room.players) {
-    if (ws && ws.readyState === WebSocket.OPEN) send(ws, payload);
   }
 }
 

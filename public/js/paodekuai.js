@@ -56,10 +56,17 @@
     var hintBtn = document.createElement('button');
     hintBtn.className = 'btn ghost small';
     hintBtn.textContent = '提示';
-    hintBtn.disabled = !myTurn || state.freeTurn || state.firstMove;
+    hintBtn.disabled = !myTurn;
     hintBtn.onclick = function () {
       if (!handCtl) return;
-      var sel = handCtl.getSelected();
+      if (state.firstMove) {
+        // 首手必须含♠3: 直接选中♠3
+        if (state.hand.indexOf(0) >= 0) {
+          handCtl.clearSelection();
+          handCtl.selectCards([0]);
+        }
+        return;
+      }
       var lastCards = state.last ? state.last.cards : null;
       var hint = C.findHint(state.hand, lastCards);
       if (!hint) { api.toast('没有能压过的牌，建议「不要」'); return; }

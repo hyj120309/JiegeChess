@@ -73,7 +73,7 @@
     var n = state.seatCount;
     var names = (api.names && api.names()) || [];
     function seatName(seat) {
-      // names 来自服务器 filter(Boolean) — 可能与座位错位；回退到通用名
+      // names 为座位对齐数组(空串=未入座); 回退到通用名
       return names[seat - 1] || ('玩家' + seat);
     }
 
