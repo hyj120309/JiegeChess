@@ -35,7 +35,7 @@
     var r = RANK_NAMES[rankOf(c)];
     var s = SUIT_CHARS[suitOf(c)];
     var red = (suitOf(c) === 1 || suitOf(c) === 3);
-    el.className += red ? ' red' : ' black';
+    el.className += red ? ' pcard-red' : ' pcard-black';
 
     var t = document.createElement('div');
     t.className = 'corner top';

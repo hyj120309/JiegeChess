@@ -245,8 +245,8 @@ dialog::backdrop { background: rgba(8,8,10,.72); }
 .pcard .corner.top { top: 3px; left: 5px; }
 .pcard .corner.bottom { bottom: 3px; right: 5px; transform: rotate(180deg); }
 .pcard .center-suit { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; }
-.pcard.red { color: #c62828; }
-.pcard.black { color: #212121; }
+.pcard-red { color: #c62828; }
+.pcard-black { color: #212121; }
 .pcard.back {
   background: repeating-linear-gradient(45deg, #1a3a6b, #1a3a6b 5px, #1f4a7f 5px, #1f4a7f 10px);
   border-color: #0d2340; color: transparent;
