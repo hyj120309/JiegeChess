@@ -212,6 +212,7 @@
     },
     onState: function (st) {
       var rc = st.redealCount || 0;
+      if (rc < lastRedeal) lastRedeal = 0; // 新一局(rematch)计数重置, 重新基准
       if (rc > lastRedeal) { api.toast('无人叫地主，重新发牌'); }
       lastRedeal = rc;
       state = st; render();

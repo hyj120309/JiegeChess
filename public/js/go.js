@@ -50,8 +50,7 @@ while (bar.firstChild) bar.removeChild(bar.firstChild);
     return;
   }
   const bt = document.createElement('div');
-  bt.className = 'go-bar-buttons';
-  bt.style.cssText = 'display:flex;gap:10px;justify-content:center;flex-wrap:wrap';
+  bt.className = 'go-bar-buttons btn-row';
 
   if (state.phase === 'scoring') {
     const t = document.createElement('div');

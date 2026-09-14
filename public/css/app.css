@@ -271,6 +271,8 @@ dialog::backdrop { background: rgba(8,8,10,.72); }
 .play-slot .pass-text { color: #9aa0a6; font-style: italic; font-size: 14px; margin-top: 8px; }
 .card-actions { display: flex; justify-content: center; margin-top: 12px; }
 .card-actions > * + * { margin-left: 12px; }
+.btn-row { display: flex; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+.btn-row > * + * { margin-left: 10px; }
 
 @media (max-width: 760px) {
   .game-body { padding: 14px 10px 60px; }

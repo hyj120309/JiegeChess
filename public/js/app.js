@@ -170,6 +170,15 @@ function startGame(m, fromResume) {
   if (m.token || m.player) {
     saveSession({ room: app.room, token: m.token || app.token, game: app.game });
   }
+  // 未开局(如断线重连到等待中的房间): 停留在等待界面
+  if (!m.state) {
+    hide('#view-game');
+    show('#view-home');
+    var joinedN = (m.names || []).filter(Boolean).length;
+    uiWait('已连接房间，等待玩家 (' + joinedN + '/' + app.capacity + ')…');
+    $('#waitRoom').textContent = prettyRoom(app.room);
+    return;
+  }
   hide('#overlayWait');
   openGame();
   render(m.state, fromResume ? null : true);
@@ -244,6 +253,7 @@ function colorSwatch(game, player) {
 
 function render(st, starting) {
   if (!app.module) return;
+  if (!st) return; // 空状态防御(理论上不该到这, startGame已分流)
   app.module.onState(st);
   updateStatus(st);
   updatePlayers();

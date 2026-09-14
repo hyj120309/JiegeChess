@@ -116,6 +116,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     x1.send({ type: 'move', move: { action: 'play', cards: [0] } });
     const e1 = await x1.wait(m => m.type === 'error');
     ok('未开局时move优雅报错', e1.msg.indexOf('尚未开始') >= 0, e1.msg);
+    // 9. 未开局房间断线重连: resumed.state应为null(客户端据此回到等待界面)
+    x1.ws.close();
+    await sleep(300);
+    const x2 = await open();
+    x2.send({ type: 'resume', room: cre2b.room, token: cre2b.token });
+    const rs2 = await x2.wait(m => m.type === 'resumed');
+    ok('未开局resume返回null状态', rs2.state === null || rs2.state === undefined, rs2.state && Object.keys(rs2.state).length);
+    ok('未开局resume返回座位', rs2.you === 1);
     console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
     process.exit(fail ? 1 : 0);
   } finally {
