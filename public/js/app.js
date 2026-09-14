@@ -3,11 +3,12 @@ import { Xiangqi } from './xiangqi.js?v=2';
 import { Go } from './go.js?v=2';
 import { getSession, saveSession, clearSession, getNickname, saveNickname } from './db.js?v=2';
 
-const $ = (q, r = document) => r.querySelector(q);
+const $ = function(q, r) { return (r || document).querySelector(q); };
+const $$ = function(q, r) { return Array.prototype.slice.call((r || document).querySelectorAll(q)); };
 const MODULES = { gomoku: Gomoku, xiangqi: Xiangqi, go: Go };
 let NAME = '玩家' + Math.floor(100 + Math.random() * 900);
 
-const app = { room: null, game: null, token: null, you: 1, opponent: '', module: null, state: null };
+const app = { room: null, game: null, token: null, you: 1, opponent: '', opponents: [], capacity: 2, module: null, state: null };
 let net = null;
 
 // ---------------- utilities ----------------
@@ -72,11 +73,29 @@ function onMsg(m) {
       break;
     case 'joined':
       saveSessionData(m);
-      startGame(m);
+      app.capacity = m.capacity || app.capacity || 2;
+      app.names = m.names || [];
+      app.opponents = app.names.filter(function(n, i) { return i + 1 !== app.you && n; });
+      if (m.state) {
+        startGame(m);
+      } else {
+        uiWait('已加入房间，等待玩家 (' + app.names.filter(Boolean).length + '/' + app.capacity + ')…');
+        $('#waitRoom').textContent = prettyRoom(m.room);
+      }
       break;
-    case 'opponentJoined':
-      app.opponent = m.opponentName;
-      startGame(m);
+    case 'playerJoined':
+      app.names = m.names || [];
+      app.capacity = m.capacity || app.capacity;
+      app.opponents = app.names.filter(function(n, i) { return i + 1 !== app.you && n; });
+      toast(m.name + ' 加入了房间');
+      if (!m.state && $('#overlayWait').classList && !$('#overlayWait').classList.contains('hidden')) {
+        $('#overlayWait').querySelector('h3').textContent =
+          '等待玩家 (' + app.names.filter(Boolean).length + '/' + app.capacity + ')…';
+      }
+      break;
+    case 'start':
+      startGame({ room: app.room, game: m.game, player: m.player, token: app.token,
+        capacity: m.capacity, state: m.state, names: m.names, opponentNames: m.opponents }, false);
       break;
     case 'resumed':
       app.opponent = m.opponentName;
@@ -133,7 +152,10 @@ function startGame(m, fromResume) {
   app.room = m.room || app.room;
   app.game = m.game || app.game;
   app.you = m.player || m.you || app.you;
-  app.opponent = m.opponentName || app.opponent;
+  app.capacity = m.capacity || app.capacity || 2;
+  app.opponent = m.opponentName || m.opponents?.[0] || '';
+  app.opponents = m.opponentNames || (m.opponentName ? [m.opponentName] : []);
+  app.names = m.names || [];
   app.state = m.state;
   if (m.token || m.player) {
     saveSession({ room: app.room, token: m.token || app.token, game: app.game });
@@ -158,20 +180,34 @@ function openGame() {
   show('#view-game');
   hide('#view-home');
   $('#roomChip').textContent = app.room;
-  const opp = app.you === 1 ? 2 : 1;
   $('#youName').innerHTML = '<span class="swatch ' + colorSwatch(app.game, app.you) + '"></span>' + NAME;
-  $('#oppName').innerHTML = '<span class="swatch ' + colorSwatch(app.game, opp) + '"></span>' + (app.opponent || '正在加入…');
-  const tip = $('#tipText');
-  const tips = {
+
+  // Opponent cards
+  var oppPanel = $('#oppPanel');
+  oppPanel.innerHTML = '';
+  var oppNames = app.names.filter(function(n, i) { return i + 1 !== app.you && n; });
+  if (oppNames.length === 0 && app.opponents.length > 0) oppNames = app.opponents;
+  for (var i = 0; i < oppNames.length; i++) {
+    var oppSeat = i < app.you - 1 ? i : i + app.you;
+    var card = document.createElement('div');
+    card.className = 'player-card';
+    card.id = 'opp-' + (i + 1);
+    card.innerHTML = '<div class="who">对手 ' + (i + 1) + '</div>' +
+      '<div class="nm"><span class="swatch ' + colorSwatch(app.game, oppSeat) + '"></span>' + oppNames[i] + '</div>';
+    oppPanel.appendChild(card);
+  }
+
+  var tip = $('#tipText');
+  var tips = {
     gomoku: '轮到你就用鼠标点击棋盘上的交叉点落子。<br>黑方先手，连成五子获胜。',
     xiangqi: '先点击自己的棋子，变亮后可看到可走点位（绿点），再点击目标位置落子。<br>红方先行，将死对方获胜。',
     go: '点击交叉点落子。直接点击即可落子。<br>双方都停一手后进入点目计分阶段。'
   };
-  tip.innerHTML = tips[app.game];
+  tip.innerHTML = tips[app.game] || '';
 
-  const mod = MODULES[app.game];
+  var mod = MODULES[app.game];
   app.module = mod;
-  mod.mount($('#boardWrap'), { you: () => app.you, send: sende, toast });
+  mod.mount($('#boardWrap'), { you: function() { return app.you; }, send: sende, toast: toast });
 }
 
 function colorSwatch(game, player) {
@@ -193,9 +229,14 @@ function render(st, starting) {
 }
 
 function updatePlayers() {
-  const meActive = !app.state.gameover && (app.state.turn === app.you);
+  var meActive = !app.state.gameover && (app.state.turn === app.you);
   $('#cardYou').classList.toggle('active', meActive);
-  $('#cardOpp').classList.toggle('active', !meActive);
+  var opps = $$('#oppPanel .player-card');
+  opps.forEach(function(c) { c.classList.remove('active'); });
+  if (!meActive && app.state.turn) {
+    var idx = app.state.turn - 1 - (app.state.turn > app.you ? 1 : 0);
+    if (idx >= 0 && idx < opps.length) opps[idx].classList.add('active');
+  }
 }
 
 function updateStatus(st) {

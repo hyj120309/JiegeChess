@@ -60,7 +60,8 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
     const b = await open();
     b.send({ type: 'join', room: cre.room, game: 'gomoku', name: '乙' });
     await b.wait(m => m.type === 'joined');
-    await a.wait(m => m.type === 'opponentJoined');
+    await b.wait(m => m.type === 'start');
+    await a.wait(m => m.type === 'start');
 
     // Black (player1=A) wins: y=7, x=7,8,9,10,11
     // White (player2=B) fills y=8 non-blocking
@@ -96,7 +97,8 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
     const b = await open();  // black
     b.send({ type: 'join', room: cre.room, game: 'xiangqi', name: '黑' });
     await b.wait(m => m.type === 'joined');
-    await a.wait(m => m.type === 'opponentJoined');
+    await b.wait(m => m.type === 'start');
+    await a.wait(m => m.type === 'start');
 
     // Helper: xiangqi move with exact match
     async function xMove(sender, from, to) {
@@ -165,7 +167,8 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
     const b = await open();
     b.send({ type: 'join', room: cre.room, game: 'go', name: '白' });
     await b.wait(m => m.type === 'joined');
-    await a.wait(m => m.type === 'opponentJoined');
+    await b.wait(m => m.type === 'start');
+    await a.wait(m => m.type === 'start');
 
     async function goMove(sender, x, y) {
       a.drain(); b.drain();
@@ -222,7 +225,8 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
     const d2 = await open();
     d2.send({ type: 'join', room: cre2.room, game: 'go', name: 'Y' });
     await d2.wait(m => m.type === 'joined');
-    await c2.wait(m => m.type === 'opponentJoined');
+    await d2.wait(m => m.type === 'start');
+    await c2.wait(m => m.type === 'start');
     c2.drain(); d2.drain();
     c2.send({ type: 'resign' });
     const rs2 = await c2.wait(m => m.type === 'state');
