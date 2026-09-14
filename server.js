@@ -73,9 +73,14 @@ function broadState(room) {
 function roomPath(id) { return path.join(DATA_DIR, id + '.json'); }
 
 function saveRoom(room) {
+  // 剔除 _views: 含全部玩家手牌的视图(冗余且有不一致隐患), 恢复时重建
+  let state = room.state;
+  if (state && state._views) {
+    state = Object.assign({}, state, { _views: null });
+  }
   const data = {
     id: room.id, game: room.game, names: room.names, tokens: room.tokens,
-    state: room.state, lastActive: room.lastActive, capacity: room.capacity,
+    state, lastActive: room.lastActive, capacity: room.capacity,
   };
   try { fs.writeFileSync(roomPath(room.id), JSON.stringify(data), 'utf8'); }
   catch (e) { console.error('[persist]', room.id, e.message); }
@@ -103,6 +108,9 @@ function loadAllRooms() {
     r.tokens = data.tokens;
     r.state = data.state;
     r.lastActive = data.lastActive;
+    // 牌类: 重建按人视图 (磁盘上不存 _views)
+    const mod = GAMES[data.game].mod;
+    if (r.state && r.state.hands && mod && mod.buildViews) mod.buildViews(r.state);
     rooms.set(id, r);
     count++;
   }

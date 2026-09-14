@@ -256,13 +256,20 @@ function render(st, starting) {
 }
 
 function updatePlayers() {
-  var meActive = app.state && !app.state.gameover && (app.state.turn === app.you);
+  var st = app.state;
+  var meActive = st && !st.gameover && (
+    (st.phase === 'claim' && st.claimTurn === app.you - 1) ||
+    (st.phase !== 'claim' && st.turn === app.you)
+  );
   $('#cardYou').classList.toggle('active', meActive);
   var opps = $$('#oppPanel .player-card');
   opps.forEach(function(c) { c.classList.remove('active'); });
-  if (!meActive && app.state && app.state.turn) {
-    var el = $('#opp-seat-' + app.state.turn);
-    if (el) el.classList.add('active');
+  if (!meActive && st) {
+    var activeSeat = st.phase === 'claim' ? (st.claimTurn + 1) : st.turn;
+    if (activeSeat > 0) {
+      var el = $('#opp-seat-' + activeSeat);
+      if (el) el.classList.add('active');
+    }
   }
 }
 

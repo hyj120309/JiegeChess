@@ -73,5 +73,21 @@ ok('cardName 大王', C.cardName(53) === '大王');
 ok('牌库无王52张', C.DECK_NO_JOKER.length === 52);
 ok('洗牌保持54张', C.shuffle().length === 54);
 
+// ---------- 跑得快发牌死锁回归 ----------
+console.log('== 跑得快 ♠3 死锁回归 ==');
+const PDK = require('../lib/paodekuai');
+let sp3InHand = 0;
+for (let i = 0; i < 10000; i++) {
+  const st = PDK.create(3);
+  const all = st.hands[0].concat(st.hands[1], st.hands[2]);
+  if (all.indexOf(0) >= 0) sp3InHand++;
+}
+ok('♠3必在玩家手中(10000次)', sp3InHand === 10000, sp3InHand);
+// 首手玩家一定能出含♠3的牌
+const st1 = PDK.create(3);
+const fh1 = st1.hands[st1.firstSeat];
+ok('首手玩家持有♠3', fh1.indexOf(0) >= 0);
+ok('首手玩家出♠3单张被接受', PDK.applyMove(st1, st1.firstSeat + 1, { action: 'play', cards: [0] }).ok);
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);
