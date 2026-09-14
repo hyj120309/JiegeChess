@@ -65,12 +65,25 @@
     els.bottom.appendChild(row);
   }
 
+  function renderScores() {
+    var label = els.bottom.querySelector('.score-line');
+    if (!label) {
+      label = document.createElement('div');
+      label.className = 'score-line';
+      label.style.cssText = 'color:#9aa0a6;font-size:12px;margin-top:4px;text-align:center';
+      els.bottom.parentNode.insertBefore(label, els.bottom.nextSibling);
+    }
+    var parts = [];
+    for (var i = 0; i < state.seatCount; i++) {
+      var s = state.scores ? state.scores[i] : 0;
+      parts.push(seatName(i + 1) + ' ' + (s > 0 ? '+' : '') + s);
+    }
+    label.textContent = '积分 · ' + parts.join(' · ') + ' · 倍数 ×' + state.multiplier;
+  }
+
   function buildClaimActions() {
     els.actions.innerHTML = '';
     var my = isMyClaim();
-    var stage = state.claimStage === 'call'
-      ? (my ? '叫地主' : '不叫')
-      : (my ? '抢地主' : '不抢');
 
     if (my) {
       var yes = document.createElement('button');
@@ -134,9 +147,10 @@
 
     var tip = document.createElement('div');
     tip.className = 'turn-tip';
+    var passNote = (!state.freeTurn && state.passCount > 0) ? '（已 ' + state.passCount + ' 人不要）' : '';
     tip.textContent = myTurn
-      ? (state.freeTurn ? '你自由出牌' : '出牌压过上家或「不要」')
-      : '等待其他玩家…';
+      ? (state.freeTurn ? '你自由出牌' : '出牌压过上家或「不要」' + passNote)
+      : '等待其他玩家…' + passNote;
     els.actions.appendChild(tip);
   }
 
@@ -151,7 +165,7 @@
       if (seat === you) continue;
       opps.push({
         name: seatName(seat)
-          + (state.landlord === i ? ' 👑地主' : ' 农民'),
+          + (state.landlord === i ? ' 👑地主' : (state.phase === 'play' ? ' 农民' : '')),
         count: state.counts[i],
         isTurn: (state.phase === 'play' && state.turn === seat && !state.gameover)
           || (state.phase === 'claim' && state.claimTurn === i),
@@ -161,6 +175,7 @@
     }
     UI.renderOpponents(els.opponents, opps, you);
     renderBottom();
+    renderScores();
 
     if (state.phase === 'claim') {
       els.playArea.innerHTML = '';

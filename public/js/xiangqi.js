@@ -203,6 +203,5 @@ export const Xiangqi = {
     draw();
   },
   reset() { state = null; sel = null; hints = []; pending = null; if (confirmBtn) confirmBtn.style.display = 'none'; draw(); },
-  title: '中国象棋',
-  myColorText: () => api.you === 1 ? '红方' : '黑方'
+  title: '中国象棋'
 };

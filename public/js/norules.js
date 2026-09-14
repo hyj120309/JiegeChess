@@ -60,9 +60,10 @@
 
     var tip = document.createElement('div');
     tip.className = 'turn-tip';
+    var passNote = (!state.freeTurn && state.passCount > 0) ? '（已 ' + state.passCount + ' 人跳过）' : '';
     tip.textContent = myTurn
-      ? (state.freeTurn ? '轮到你先出，出任意牌' : '轮到你：出牌或跳过')
-      : '等待其他玩家…';
+      ? (state.freeTurn ? '轮到你先出，出任意牌' : '轮到你：出牌或跳过' + passNote)
+      : '等待其他玩家…' + passNote;
     els.actions.appendChild(tip);
   }
 

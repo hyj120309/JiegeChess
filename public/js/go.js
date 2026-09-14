@@ -57,8 +57,8 @@ while (bar.firstChild) bar.removeChild(bar.firstChild);
     const t = document.createElement('div');
     t.className = 'room-hint';
     t.style.cssText = 'color:#9aa0a6;font-size:13px;margin-bottom:8px';
-    const me = state.confirmed[api.you];
-    const opp = state.confirmed[api.you === 1 ? 2 : 1];
+    const me = state.confirmed[api.you()];
+    const opp = state.confirmed[api.you() === 1 ? 2 : 1];
     t.textContent = '计分阶段：点击标记对手的死子' +
       (me ? '（你已确认）' : '') + (opp ? '（对方已确认）' : '');
     const ok = document.createElement('button');
@@ -228,6 +228,5 @@ export const Go = {
     if (info) info.style.display = 'none';
     draw();
   },
-  title: '围棋',
-  myColorText: () => api.you === 1 ? '黑方' : '白方'
+  title: '围棋'
 };

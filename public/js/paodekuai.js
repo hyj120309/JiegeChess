@@ -82,11 +82,12 @@
 
     var tip = document.createElement('div');
     tip.className = 'turn-tip';
+    var passNote = (!state.freeTurn && state.passCount > 0) ? '（已 ' + state.passCount + ' 人不要）' : '';
     if (myTurn) {
       tip.textContent = state.firstMove ? '你持♠3先出，首手必须包含♠3'
-        : (state.freeTurn ? '轮到你自由出牌' : '轮到你：出牌压过上家或「不要」');
+        : (state.freeTurn ? '轮到你自由出牌' : '轮到你：出牌压过上家或「不要」' + passNote);
     } else {
-      tip.textContent = '等待其他玩家…';
+      tip.textContent = '等待其他玩家…' + passNote;
     }
     els.actions.appendChild(tip);
   }
@@ -101,7 +102,7 @@
       var seat = i + 1;
       if (seat === you) continue;
       opps.push({
-        name: seatName(seat) + (state.firstSeat === i ? ' ♠3' : ''),
+        name: seatName(seat) + (state.firstMove && state.firstSeat === i ? ' ♠3' : ''),
         count: state.counts[i],
         isTurn: state.turn === seat && !state.gameover,
         isWinner: state.gameover && state.winner === seat,

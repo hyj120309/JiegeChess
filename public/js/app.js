@@ -1,7 +1,7 @@
-import { Gomoku } from './gomoku.js?v=2';
-import { Xiangqi } from './xiangqi.js?v=2';
-import { Go } from './go.js?v=2';
-import { getSession, saveSession, clearSession, getNickname, saveNickname } from './db.js?v=2';
+import { Gomoku } from './gomoku.js?v=4';
+import { Xiangqi } from './xiangqi.js?v=4';
+import { Go } from './go.js?v=4';
+import { getSession, saveSession, clearSession, getNickname, saveNickname } from './db.js?v=4';
 
 const $ = function(q, r) { return (r || document).querySelector(q); };
 const $$ = function(q, r) { return Array.prototype.slice.call((r || document).querySelectorAll(q)); };
@@ -62,8 +62,9 @@ async function connect() {
   };
   net.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch { return; } onMsg(m); };
   net.onclose = () => { net = null; setTimeout(connect, 1500); };
-  setInterval(() => sende({ ping: 1 }), 25000);
 }
+// 全局只注册一次心跳 (connect内注册会在重连时泄漏定时器)
+setInterval(() => sende({ ping: 1 }), 25000);
 
 // ---------------- message handling ----------------
 function onMsg(m) {
@@ -131,7 +132,11 @@ function onMsg(m) {
       hide('#view-game');
       show('#view-home');
       break;
-    case 'notfound': hideWait(); toast('房间不存在，请检查房间号'); break;
+    case 'notfound':
+      hideWait();
+      toast('房间不存在，请检查房间号');
+      if (app.room) { app.room = null; clearSession(); } // 会话已失效(房间被销毁/过期)
+      break;
     case 'full': hideWait(); toast('房间已满，无法加入'); break;
     case 'wronggame': hideWait(); toast('房间的游戏类型与你选择的不同'); break;
     case 'forbidden': hideWait(); toast('身份校验失败'); break;
@@ -157,7 +162,8 @@ function startGame(m, fromResume) {
   app.game = m.game || app.game;
   app.you = m.player || m.you || app.you;
   app.capacity = m.capacity || app.capacity || 2;
-  app.opponent = m.opponentName || m.opponents?.[0] || '';
+  var oppFirst = (m.opponents && m.opponents[0]) || '';
+  app.opponent = m.opponentName || oppFirst;
   app.opponents = m.opponentNames || (m.opponentName ? [m.opponentName] : []);
   app.names = m.names || [];
   app.state = m.state;
@@ -180,11 +186,17 @@ function uiWait(text) {
 function show(q) { const el = $(q); if (el) { el.classList.remove('hidden'); el.classList.add('active'); } }
 function hide(q) { const el = $(q); if (el) { el.classList.add('hidden'); el.classList.remove('active'); } }
 
+// HTML转义 (防XSS: 昵称等用户输入拼进innerHTML前必须转义)
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function openGame() {
   show('#view-game');
   hide('#view-home');
   $('#roomChip').textContent = app.room;
-  $('#youName').innerHTML = '<span class="swatch ' + colorSwatch(app.game, app.you) + '"></span>' + NAME;
+  $('#youName').innerHTML = '<span class="swatch ' + colorSwatch(app.game, app.you) + '"></span><span class="nm-text">' + esc(NAME) + '</span>';
 
   // Opponent cards (seat-aligned, skip self)
   var oppPanel = $('#oppPanel');
@@ -197,7 +209,7 @@ function openGame() {
     card.className = 'player-card';
     card.id = 'opp-seat-' + seat;
     card.innerHTML = '<div class="who">座位 ' + seat + '</div>' +
-      '<div class="nm"><span class="swatch ' + colorSwatch(app.game, seat) + '"></span><span class="nm-text">' + nm + '</span></div>';
+      '<div class="nm"><span class="swatch ' + colorSwatch(app.game, seat) + '"></span><span class="nm-text">' + esc(nm) + '</span></div>';
     oppPanel.appendChild(card);
   }
 
@@ -264,6 +276,10 @@ function updateStatus(st) {
   } else if (st.phase === 'scoring') {
     el.textContent = '计分阶段';
     dot.className = 'dot opp';
+  } else if (st.phase === 'claim') {
+    var myClaim = st.claimTurn === app.you - 1;
+    el.textContent = myClaim ? '轮到你表态' : '叫地主阶段';
+    dot.className = 'dot ' + (myClaim ? 'mine' : 'opp');
   } else {
     var mine = st.turn === app.you;
     el.textContent = (mine ? '轮到你' : '等待对方') + (st.check ? ' · 将军!' : '');
@@ -294,6 +310,21 @@ function showResult(st) {
     s = '黑 ' + sc.black + ' 分 · 白 ' + sc.white + ' 分' + (sc.komi ? '（贴目 ' + sc.komi + '）' : '');
   } else if (st.winType === 'draw') {
     e = '🤝'; t = '平局'; s = '棋盘已下满';
+  } else if (CARD_GAMES.indexOf(app.game) >= 0) {
+    // 牌类胜利
+    e = win === you ? '🏆' : '🥈';
+    t = win === you ? '你赢了！' : '本局惜败';
+    if (app.game === 'doudizhu') {
+      var iAmLandlord = app.state && app.state.landlord === you - 1;
+      var landlordWin = app.state && (app.state.winner - 1 === app.state.landlord);
+      var myWin = (iAmLandlord === landlordWin);
+      t = myWin ? '你赢了！' : '本局惜败';
+      e = myWin ? '🏆' : '🥈';
+      s = (st.winType === 'spring' ? '春天！' : st.winType === 'antispring' ? '反春！' : '') +
+        '倍数 ×' + (app.state.multiplier || 1) + ' · 积分 ' + (app.state.scores ? app.state.scores.join(' / ') : '-');
+    } else {
+      s = '先出完手牌获胜';
+    }
   } else {
     e = win === you ? '🏆' : '🥈';
     t = win === you ? '你赢了！' : '本局惜败';
@@ -306,6 +337,12 @@ function showResult(st) {
 }
 
 function handleOppLeft() {
+  // 多人房间(牌类): 一人离开不销毁房间, 等待其重连; 2人棋牌: 对方无法回来则退出
+  var isMulti = CARD_GAMES.indexOf(app.game) >= 0 || app.capacity > 2;
+  if (isMulti) {
+    toast('有玩家离开了房间，等待重连…');
+    return;
+  }
   hide('#overlayResult');
   hide('#overlayWait');
   if (!$('#view-game').classList.contains('hidden')) {

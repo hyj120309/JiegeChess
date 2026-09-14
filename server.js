@@ -48,6 +48,11 @@ function genToken() {
   return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
 }
 
+// 昵称清洗: 去掉HTML危险字符, 限长 (防XSS)
+function sanitizeName(name) {
+  return String(name || '').replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12);
+}
+
 // ---------- personal state view ----------
 function buildView(state, playerIdx, seatCount) {
   if (!state || !state._views) return state;
@@ -140,7 +145,7 @@ class Room {
 }
 
 // ---------- handlers ----------
-let room = null; // used in addPlayer, need fix
+
 
 function handleMessage(ws, raw) {
   let msg;
@@ -158,7 +163,7 @@ function handleMessage(ws, raw) {
       if (GAMES[game].customCapacity) {
         cap = Math.min(5, Math.max(2, parseInt(msg.playerCount) || 2));
       }
-      const nr = new Room(genRoomId(), game, ws, msg.name, cap);
+      const nr = new Room(genRoomId(), game, ws, sanitizeName(msg.name), cap);
       rooms.set(nr.id, nr);
       ws.room = nr;
       ws.seat = 0;
@@ -171,7 +176,7 @@ function handleMessage(ws, raw) {
       if (!r) return send(ws, { type: 'notfound', room: rid });
       if (msg.game && r.game !== msg.game) return send(ws, { type: 'wronggame', room: rid, game: r.game });
       if (r.isFull()) return send(ws, { type: 'full', room: rid });
-      const slot = r.addPlayer(ws, msg.name);
+      const slot = r.addPlayer(ws, sanitizeName(msg.name));
       if (slot < 0) return send(ws, { type: 'full', room: rid });
       r.tokens[slot] = genToken(); // 重新生成token，防止旧占用者抢占座位
       r.lastActive = Date.now();
@@ -179,14 +184,14 @@ function handleMessage(ws, raw) {
       send(ws, {
         type: 'joined', room: rid, game: r.game, player: slot + 1,
         token: r.tokens[slot], name: r.names[slot], capacity: r.capacity,
-        names: r.names, state: r.state,
+        names: r.names, state: buildView(r.state, slot, r.capacity),
       });
-      // notify others
+      // notify others (不发state: 原始state含所有人手牌, 且客户端不需要)
       for (let i = 0; i < r.capacity; i++) {
         if (i !== slot && r.players[i] && r.players[i].readyState === WebSocket.OPEN) {
           send(r.players[i], {
             type: 'playerJoined', seat: slot + 1, name: r.names[slot],
-            names: r.names, capacity: r.capacity, state: r.state,
+            names: r.names, capacity: r.capacity,
           });
         }
       }
@@ -221,13 +226,16 @@ function handleMessage(ws, raw) {
       }
       if (idx < 0) return send(ws, { type: 'forbidden' });
       if (r.players[idx] && r.players[idx] !== ws) {
-        try { r.players[idx].close(1000, 'replaced'); } catch {}
+        // 先解除旧连接的room/seat绑定, 防止其close事件把新连接踢出座位(刷新竞态)
+        const old = r.players[idx];
+        old.room = null; old.seat = undefined;
+        try { old.close(1000, 'replaced'); } catch {}
       }
       r.players[idx] = ws;
       ws.room = r; ws.seat = idx;
       send(ws, {
         type: 'resumed', room: rid, game: r.game, you: idx + 1,
-        name: r.names[idx], capacity: r.capacity, state: r.state,
+        name: r.names[idx], capacity: r.capacity, state: buildView(r.state, idx, r.capacity),
         names: r.names, opponentNames: r.names.filter((n, i) => i !== idx && n),
       });
       const other = r.players.find((p, i) => i !== idx && p && p.readyState === WebSocket.OPEN);
@@ -236,6 +244,7 @@ function handleMessage(ws, raw) {
     }
     case 'move': {
       if (!room) return send(ws, { type: 'error', msg: '不在房间中' });
+      if (!room.state) return send(ws, { type: 'error', msg: '对局尚未开始' });
       const seat = ws.seat;
       const mod = room.game ? GAMES[room.game].mod : null;
       if (mod) {
@@ -249,7 +258,7 @@ function handleMessage(ws, raw) {
       break;
     }
     case 'select': {
-      if (!room || room.game !== 'xiangqi') return;
+      if (!room || room.game !== 'xiangqi' || !room.state) return;
       const seat = ws.seat;
       const player = seat + 1;
       if (room.state.gameover || room.state.turn !== player) return;
@@ -261,21 +270,20 @@ function handleMessage(ws, raw) {
       break;
     }
     case 'pass': {
-      if (!room) return;
+      if (!room || !room.state) return;
       const seat = ws.seat;
       const player = seat + 1;
       const mod = room.game ? GAMES[room.game].mod : null;
-      if (mod && mod.pass) {
-        const res = mod.pass(room.state, player);
-        if (!res.ok) return send(ws, { type: 'error', msg: res.errors.join('；') });
-      }
+      if (!mod || !mod.pass) return; // 仅围棋支持pass消息; 牌类走move.action=pass
+      const res = mod.pass(room.state, player);
+      if (!res.ok) return send(ws, { type: 'error', msg: res.errors.join('；') });
       room.lastActive = Date.now();
       saveRoom(room);
       broadState(room);
       break;
     }
     case 'markDead': {
-      if (!room || room.game !== 'go') return;
+      if (!room || room.game !== 'go' || !room.state) return;
       const seat = ws.seat;
       const player = seat + 1;
       const res = GAMES.go.mod.markDead(room.state, player, msg);
@@ -286,7 +294,7 @@ function handleMessage(ws, raw) {
       break;
     }
     case 'confirmScore': {
-      if (!room || room.game !== 'go') return;
+      if (!room || room.game !== 'go' || !room.state) return;
       const seat = ws.seat;
       const player = seat + 1;
       const res = GAMES.go.mod.confirmScore(room.state, player);
@@ -296,7 +304,7 @@ function handleMessage(ws, raw) {
       break;
     }
     case 'resumeGame': {
-      if (!room || room.game !== 'go') return;
+      if (!room || room.game !== 'go' || !room.state) return;
       const seat = ws.seat;
       const player = seat + 1;
       const res = GAMES.go.mod.resume(room.state, player);
@@ -307,6 +315,7 @@ function handleMessage(ws, raw) {
     }
     case 'resign': {
       if (!room) return send(ws, { type: 'error', msg: '不在房间中' });
+      if (!room.state) return send(ws, { type: 'error', msg: '对局尚未开始' });
       const mod = room.game ? GAMES[room.game].mod : null;
       if (mod) {
         const seat = ws.seat;
@@ -358,33 +367,42 @@ function broadcast(room, payload) {
 }
 
 function closeRoom(room, reason) {
-  saveRoom(room);
+  // leave = 永久离开: 彻底销毁(内存+磁盘), 防止文件泄漏
   for (const ws of room.players) {
+    if (ws) { ws.room = null; ws.seat = undefined; }
     if (ws && ws.readyState === WebSocket.OPEN) ws.close(1000, reason);
   }
+  deleteRoomFile(room.id);
   rooms.delete(room.id);
 }
 
 function onClose(ws) {
   if (!ws.room) return;
   const room = ws.room;
-  const idx = ws.seat != null ? ws.seat : room.players.indexOf(ws);
+  ws.room = null; ws.seat = undefined; // 防重复close
+  const idx = room.players.indexOf(ws);
   if (idx >= 0 && idx < room.players.length) room.players[idx] = null;
-  const other = room.players.find((p, i) => i !== idx && p && p.readyState === WebSocket.OPEN);
-  if (other) send(other, { type: 'opponentLeft', who: idx + 1 });
-  if (room.liveCount() === 0) { saveRoom(room); rooms.delete(room.id); }
+  const others = room.players.filter((p, i) => i !== idx && p && p.readyState === WebSocket.OPEN);
+  for (const o of others) send(o, { type: 'opponentLeft', who: idx + 1 });
+  if (room.liveCount() === 0) {
+    // 全员断开: 保留内存+磁盘(TTL统一清理), 支持断线重连resume
+    saveRoom(room);
+  }
 }
 
 // ---------- HTTP ----------
 const server = http.createServer((req, res) => {
-  let urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
+  let urlPath;
+  try { urlPath = decodeURIComponent((req.url || '/').split('?')[0]); }
+  catch { res.writeHead(400); res.end('Bad Request'); return; } // 畸形URL不致崩溃
   if (urlPath === '/' || urlPath === '/index.html') urlPath = '/index.html';
   let file;
-  if (urlPath.startsWith('/lib/')) file = path.join(ROOT, urlPath);
+  if (urlPath === '/lib/cards.js') file = path.join(ROOT, 'lib', 'cards.js'); // 仅放行客户端需要的同构引擎
   else if (urlPath.startsWith('/res/')) file = path.join(ROOT, urlPath);
   else file = path.join(PUB, urlPath);
   file = path.normalize(file);
-  if (!file.startsWith(PUB) && !file.startsWith(path.join(ROOT, 'res')) && !file.startsWith(path.join(ROOT, 'lib'))) {
+  const allowLib = path.join(ROOT, 'lib', 'cards.js');
+  if (!file.startsWith(PUB) && !file.startsWith(path.join(ROOT, 'res')) && file !== allowLib) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
   fs.stat(file, (err, st) => {

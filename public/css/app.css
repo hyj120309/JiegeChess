@@ -141,6 +141,8 @@ body > main.hidden { display: none !important; }
 
 .side-panel { width: 250px; display: flex; flex-direction: column; }
 .side-panel > * + * { margin-top: 14px; }
+#oppPanel > .player-card + .player-card { margin-top: 14px; }
+.turn-tip { color: #9aa0a6; font-size: 13px; margin-top: 8px; text-align: center; }
 .player-card {
   background: #1b1c21; border: 1px solid #2a2c33; border-radius: 16px; padding: 14px 16px;
 }
