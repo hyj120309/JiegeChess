@@ -9,7 +9,7 @@ const GAMES = {
   xiangqi:   { mod: require('./lib/xiangqi'),   capacity: 2 },
   go:        { mod: require('./lib/go'),         capacity: 2 },
   norules:   { mod: require('./lib/norules'),    capacity: 3, customCapacity: true },
-  paodekuai: { mod: null, capacity: 3 },
+  paodekuai: { mod: require('./lib/paodekuai'),  capacity: 3 },
   doudizhu:  { mod: null, capacity: 3 },
 };
 

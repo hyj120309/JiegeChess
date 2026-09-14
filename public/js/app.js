@@ -7,6 +7,7 @@ const $ = function(q, r) { return (r || document).querySelector(q); };
 const $$ = function(q, r) { return Array.prototype.slice.call((r || document).querySelectorAll(q)); };
 const MODULES = { gomoku: Gomoku, xiangqi: Xiangqi, go: Go };
 if (typeof window !== 'undefined' && window.NorulesUI) MODULES.norules = window.NorulesUI;
+if (typeof window !== 'undefined' && window.PaodekuaiUI) MODULES.paodekuai = window.PaodekuaiUI;
 let NAME = '玩家' + Math.floor(100 + Math.random() * 900);
 
 const app = { room: null, game: null, token: null, you: 1, opponent: '', opponents: [], capacity: 2, module: null, state: null };
@@ -204,7 +205,8 @@ function openGame() {
     gomoku: '轮到你就用鼠标点击棋盘上的交叉点落子。<br>黑方先手，连成五子获胜。',
     xiangqi: '先点击自己的棋子，变亮后可看到可走点位（绿点），再点击目标位置落子。<br>红方先行，将死对方获胜。',
     go: '点击交叉点落子。直接点击即可落子。<br>双方都停一手后进入点目计分阶段。',
-    norules: '轮到你时：点击手牌选中/取消，点「出牌」打出任意牌，或「跳过」。<br>其余人都跳过后你可自由出牌，先出完手牌者获胜。'
+    norules: '轮到你时：点击手牌选中/取消，点「出牌」打出任意牌，或「跳过」。<br>其余人都跳过后你可自由出牌，先出完手牌者获胜。',
+    paodekuai: '持 ♠3 者先出且首手必须含 ♠3。<br>出牌须为合法牌型并压过上家，其余人都「不要」后你可自由出牌。先出完者获胜。'
   };
   tip.innerHTML = tips[app.game] || '';
 
@@ -312,7 +314,7 @@ function handleOppLeft() {
 
 // ---------------- actions ----------------
 const CARD_GAMES = ['norules', 'paodekuai', 'doudizhu'];
-const UNREADY_GAMES = ['paodekuai', 'doudizhu']; // 即将上线
+const UNREADY_GAMES = ['doudizhu']; // 即将上线
 
 function createRoom(game, playerCount) {
   if (!net || net.readyState !== 1) { toast('连接中，请稍候', 'err'); return; }

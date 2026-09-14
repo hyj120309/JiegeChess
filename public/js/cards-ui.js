@@ -87,7 +87,20 @@
       var kids = container.children;
       for (var i = 0; i < kids.length; i++) kids[i].classList.remove('selected');
     }
-    return { getSelected: getSelected, clearSelection: clearSelection };
+    function selectCards(cards) {
+      clearSelection();
+      var kids = container.children;
+      for (var i = 0; i < kids.length; i++) kids[i].classList.remove('selected');
+      // hand 由大到小渲染; 按卡片DOM顺序与 cards 匹配
+      var sorted2 = hand.slice().sort(function (a, b) { return b - a; });
+      for (var j = 0; j < sorted2.length; j++) {
+        if (cards.indexOf(sorted2[j]) >= 0) {
+          selected[sorted2[j]] = true;
+          if (kids[j]) kids[j].classList.add('selected');
+        }
+      }
+    }
+    return { getSelected: getSelected, clearSelection: clearSelection, selectCards: selectCards };
   }
 
   // 渲染对手区（顶部一排）：data: [{name, count, isTurn, isWinner}]
