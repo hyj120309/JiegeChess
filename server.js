@@ -10,7 +10,7 @@ const GAMES = {
   go:        { mod: require('./lib/go'),         capacity: 2 },
   norules:   { mod: require('./lib/norules'),    capacity: 3, customCapacity: true },
   paodekuai: { mod: require('./lib/paodekuai'),  capacity: 3 },
-  doudizhu:  { mod: null, capacity: 3 },
+  doudizhu:  { mod: require('./lib/doudizhu'),   capacity: 3 },
 };
 
 const ROOT = __dirname;
@@ -323,7 +323,7 @@ function handleMessage(ws, raw) {
       if (!room) return send(ws, { type: 'error', msg: '不在房间中' });
       if (!room.state || !room.state.gameover) return send(ws, { type: 'error', msg: '对局尚未结束' });
       const mod = room.game ? GAMES[room.game].mod : null;
-      if (mod) room.state = mod.create(room.capacity);
+      if (mod) room.state = mod.create(room.capacity, room.state); // 第二参数传旧局, 斗地主用于保留积分
       else room.state = null;
       saveRoom(room);
       for (let i = 0; i < room.capacity; i++) {
