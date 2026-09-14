@@ -6,6 +6,7 @@ import { getSession, saveSession, clearSession, getNickname, saveNickname } from
 const $ = function(q, r) { return (r || document).querySelector(q); };
 const $$ = function(q, r) { return Array.prototype.slice.call((r || document).querySelectorAll(q)); };
 const MODULES = { gomoku: Gomoku, xiangqi: Xiangqi, go: Go };
+if (typeof window !== 'undefined' && window.NorulesUI) MODULES.norules = window.NorulesUI;
 let NAME = '玩家' + Math.floor(100 + Math.random() * 900);
 
 const app = { room: null, game: null, token: null, you: 1, opponent: '', opponents: [], capacity: 2, module: null, state: null };
@@ -67,7 +68,8 @@ function onMsg(m) {
   switch (m.type) {
     case 'created':
       saveSessionData(m);
-      uiWait('房间已创建，等待对手加入…');
+      app.capacity = m.capacity || 2;
+      uiWait('房间已创建，等待玩家 (1/' + app.capacity + ')…');
       $('#waitRoom').textContent = prettyRoom(m.room);
       $('#waitLink').textContent = location.origin + '/?join=' + m.room;
       break;
@@ -182,18 +184,18 @@ function openGame() {
   $('#roomChip').textContent = app.room;
   $('#youName').innerHTML = '<span class="swatch ' + colorSwatch(app.game, app.you) + '"></span>' + NAME;
 
-  // Opponent cards
+  // Opponent cards (seat-aligned, skip self)
   var oppPanel = $('#oppPanel');
   oppPanel.innerHTML = '';
-  var oppNames = app.names.filter(function(n, i) { return i + 1 !== app.you && n; });
-  if (oppNames.length === 0 && app.opponents.length > 0) oppNames = app.opponents;
-  for (var i = 0; i < oppNames.length; i++) {
-    var oppSeat = i < app.you - 1 ? i : i + app.you;
+  var cap = app.capacity || 2;
+  for (var seat = 1; seat <= cap; seat++) {
+    if (seat === app.you) continue;
+    var nm = app.names[seat - 1] || app.opponents[seat - 1] || ('等待加入…');
     var card = document.createElement('div');
     card.className = 'player-card';
-    card.id = 'opp-' + (i + 1);
-    card.innerHTML = '<div class="who">对手 ' + (i + 1) + '</div>' +
-      '<div class="nm"><span class="swatch ' + colorSwatch(app.game, oppSeat) + '"></span>' + oppNames[i] + '</div>';
+    card.id = 'opp-seat-' + seat;
+    card.innerHTML = '<div class="who">座位 ' + seat + '</div>' +
+      '<div class="nm"><span class="swatch ' + colorSwatch(app.game, seat) + '"></span><span class="nm-text">' + nm + '</span></div>';
     oppPanel.appendChild(card);
   }
 
@@ -201,16 +203,25 @@ function openGame() {
   var tips = {
     gomoku: '轮到你就用鼠标点击棋盘上的交叉点落子。<br>黑方先手，连成五子获胜。',
     xiangqi: '先点击自己的棋子，变亮后可看到可走点位（绿点），再点击目标位置落子。<br>红方先行，将死对方获胜。',
-    go: '点击交叉点落子。直接点击即可落子。<br>双方都停一手后进入点目计分阶段。'
+    go: '点击交叉点落子。直接点击即可落子。<br>双方都停一手后进入点目计分阶段。',
+    norules: '轮到你时：点击手牌选中/取消，点「出牌」打出任意牌，或「跳过」。<br>其余人都跳过后你可自由出牌，先出完手牌者获胜。'
   };
   tip.innerHTML = tips[app.game] || '';
 
   var mod = MODULES[app.game];
   app.module = mod;
-  mod.mount($('#boardWrap'), { you: function() { return app.you; }, send: sende, toast: toast });
+  // 牌类不支持认输
+  $('#btnResign').style.display = (CARD_GAMES.indexOf(app.game) >= 0) ? 'none' : '';
+  mod.mount($('#boardWrap'), {
+    you: function() { return app.you; },
+    send: sende,
+    toast: toast,
+    names: function() { return app.names || []; },
+  });
 }
 
 function colorSwatch(game, player) {
+  if (game === 'norules' || game === 'paodekuai' || game === 'doudizhu') return 'poker-swatch';
   if (game === 'xiangqi') return player === 1 ? 'red' : 'black-red';
   return player === 1 ? 'black' : 'white';
 }
@@ -229,28 +240,28 @@ function render(st, starting) {
 }
 
 function updatePlayers() {
-  var meActive = !app.state.gameover && (app.state.turn === app.you);
+  var meActive = app.state && !app.state.gameover && (app.state.turn === app.you);
   $('#cardYou').classList.toggle('active', meActive);
   var opps = $$('#oppPanel .player-card');
   opps.forEach(function(c) { c.classList.remove('active'); });
-  if (!meActive && app.state.turn) {
-    var idx = app.state.turn - 1 - (app.state.turn > app.you ? 1 : 0);
-    if (idx >= 0 && idx < opps.length) opps[idx].classList.add('active');
+  if (!meActive && app.state && app.state.turn) {
+    var el = $('#opp-seat-' + app.state.turn);
+    if (el) el.classList.add('active');
   }
 }
 
 function updateStatus(st) {
-  const el = $('#statusText');
-  const dot = $('#dot');
+  var el = $('#statusText');
+  var dot = $('#dot');
   if (!st) { el.textContent = '未连接'; dot.className = 'dot'; return; }
   if (st.gameover) {
-    el.textContent = '对局结束';
+    el.textContent = st.winner === app.you ? '你赢了！' : (st.winner ? '本局惜败' : '对局结束');
     dot.className = 'dot';
   } else if (st.phase === 'scoring') {
     el.textContent = '计分阶段';
     dot.className = 'dot opp';
   } else {
-    const mine = st.turn === app.you;
+    var mine = st.turn === app.you;
     el.textContent = (mine ? '轮到你' : '等待对方') + (st.check ? ' · 将军!' : '');
     dot.className = 'dot ' + (mine ? 'mine' : 'opp');
   }
@@ -300,15 +311,20 @@ function handleOppLeft() {
 }
 
 // ---------------- actions ----------------
-function createRoom(game) {
+const CARD_GAMES = ['norules', 'paodekuai', 'doudizhu'];
+const UNREADY_GAMES = ['paodekuai', 'doudizhu']; // 即将上线
+
+function createRoom(game, playerCount) {
   if (!net || net.readyState !== 1) { toast('连接中，请稍候', 'err'); return; }
+  if (UNREADY_GAMES.indexOf(game) >= 0) { toast('该玩法即将上线，敬请期待'); return; }
   app.game = game;
-  sende({ type: 'create', game, name: NAME });
+  sende({ type: 'create', game, name: NAME, playerCount: playerCount });
   uiWait('正在创建房间…');
   $('#waitRoom').textContent = '—— —— ——';
   $('#waitLink').textContent = '';
   $('#btnCopyWait').textContent = '复制房间链接';
   $('#btnCancelWait').textContent = '销毁房间';
+  $('#btnCopyWait').style.display = '';
 }
 
 function joinRoom() {
@@ -316,6 +332,7 @@ function joinRoom() {
   if (!/^\d{6}$/.test(v)) { toast('请输入 6 位房间号', 'err'); return; }
   const onBtn = $('#segGame button.on');
   const game = (onBtn && onBtn.dataset.g) || 'gomoku';
+  if (UNREADY_GAMES.indexOf(game) >= 0) { toast('该玩法即将上线，敬请期待'); return; }
   app.game = game;
   sende({ type: 'join', room: v, game, name: NAME });
   uiWait('正在加入房间 ' + prettyRoom(v) + ' …');
@@ -323,6 +340,11 @@ function joinRoom() {
   $('#waitLink').textContent = '';
   $('#btnCancelWait').textContent = '销毁房间';
   $('#btnCopyWait').style.display = 'none';
+}
+
+function showCountPicker() {
+  if (!net || net.readyState !== 1) { toast('连接中，请稍候', 'err'); return; }
+  show('#overlayCount');
 }
 
 function exitRoom() {
@@ -352,8 +374,20 @@ function bind() {
     if (v) { NAME = v; saveNickname(v); }
   });
   document.querySelectorAll('.mcard').forEach(c => {
-    c.addEventListener('click', () => createRoom(c.dataset.game));
+    c.addEventListener('click', () => {
+      var g = c.dataset.game;
+      if (g === 'norules') { showCountPicker(); return; }
+      createRoom(g);
+    });
   });
+  // 人数选择弹窗
+  document.querySelectorAll('#overlayCount [data-count]').forEach(b => {
+    b.addEventListener('click', () => {
+      hide('#overlayCount');
+      createRoom('norules', parseInt(b.dataset.count, 10));
+    });
+  });
+  $('#btnCountCancel').addEventListener('click', () => hide('#overlayCount'));
   $('#segGame').addEventListener('click', e => {
     const b = e.target.closest('button');
     if (!b) return;

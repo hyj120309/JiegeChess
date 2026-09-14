@@ -8,9 +8,9 @@ const GAMES = {
   gomoku:    { mod: require('./lib/gomoku'),    capacity: 2 },
   xiangqi:   { mod: require('./lib/xiangqi'),   capacity: 2 },
   go:        { mod: require('./lib/go'),         capacity: 2 },
-  paodekuai: { mod: null, capacity: 3 }, // later
-  doudizhu:  { mod: null, capacity: 3 }, // later
-  norules:   { mod: null, capacity: 2, customCapacity: true },
+  norules:   { mod: require('./lib/norules'),    capacity: 3, customCapacity: true },
+  paodekuai: { mod: null, capacity: 3 },
+  doudizhu:  { mod: null, capacity: 3 },
 };
 
 const ROOT = __dirname;
@@ -179,30 +179,30 @@ function handleMessage(ws, raw) {
       send(ws, {
         type: 'joined', room: rid, game: r.game, player: slot + 1,
         token: r.tokens[slot], name: r.names[slot], capacity: r.capacity,
-        names: r.names.filter(Boolean), state: r.state,
+        names: r.names, state: r.state,
       });
       // notify others
       for (let i = 0; i < r.capacity; i++) {
         if (i !== slot && r.players[i] && r.players[i].readyState === WebSocket.OPEN) {
           send(r.players[i], {
             type: 'playerJoined', seat: slot + 1, name: r.names[slot],
-            names: r.names.filter(Boolean), capacity: r.capacity, state: r.state,
+            names: r.names, capacity: r.capacity, state: r.state,
           });
         }
       }
-      // auto-start for board games when room is full
+      // auto-start when room is full
       if (r.isFull()) {
         const mod = GAMES[r.game].mod;
         if (mod && !r.state) {
-          r.state = mod.create();
+          r.state = mod.create(r.capacity);
           saveRoom(r);
           for (let i = 0; i < r.capacity; i++) {
             const ws2 = r.players[i];
             if (ws2 && ws2.readyState === WebSocket.OPEN) {
               send(ws2, {
                 type: 'start', game: r.game, player: i + 1,
-                capacity: r.capacity, state: r.state,
-                names: r.names.filter(Boolean),
+                capacity: r.capacity, state: buildView(r.state, i, r.capacity),
+                names: r.names,
                 opponents: r.names.filter((n, idx) => idx !== i && n),
               });
             }
@@ -228,7 +228,7 @@ function handleMessage(ws, raw) {
       send(ws, {
         type: 'resumed', room: rid, game: r.game, you: idx + 1,
         name: r.names[idx], capacity: r.capacity, state: r.state,
-        names: r.names.filter(Boolean), opponentNames: r.names.filter((n, i) => i !== idx && n),
+        names: r.names, opponentNames: r.names.filter((n, i) => i !== idx && n),
       });
       const other = r.players.find((p, i) => i !== idx && p && p.readyState === WebSocket.OPEN);
       if (other) send(other, { type: 'opponentReconnected', seat: idx + 1 });
@@ -323,10 +323,15 @@ function handleMessage(ws, raw) {
       if (!room) return send(ws, { type: 'error', msg: '不在房间中' });
       if (!room.state || !room.state.gameover) return send(ws, { type: 'error', msg: '对局尚未结束' });
       const mod = room.game ? GAMES[room.game].mod : null;
-      if (mod) room.state = mod.create();
+      if (mod) room.state = mod.create(room.capacity);
       else room.state = null;
       saveRoom(room);
-      broadAll(room, { type: 'rematch', state: room.state });
+      for (let i = 0; i < room.capacity; i++) {
+        const ws2 = room.players[i];
+        if (ws2 && ws2.readyState === WebSocket.OPEN) {
+          send(ws2, { type: 'rematch', state: buildView(room.state, i, room.capacity) });
+        }
+      }
       break;
     }
     case 'destroy': {

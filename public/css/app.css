@@ -153,6 +153,7 @@ body > main.hidden { display: none !important; }
 .swatch.white { background: #f2f2f2; border: 1px solid #666; }
 .swatch.red { background: #e53935; }
 .swatch.black-red { background: #263238; border: 1px solid #666; }
+.swatch.poker-swatch { background: linear-gradient(135deg, #fff 49%, #c62828 51%, #c62828 53%, #212121 55%, #212121 100%); border: 1px solid #888; }
 
 .tip-card { background: #1b1c21; border: 1px solid #2a2c33; border-radius: 16px; padding: 14px 16px; font-size: 13px; color: #cfd3da; line-height: 1.7; }
 .tip-card h4 { margin: 0 0 6px; font-size: 13px; color: #9aa0a6; }

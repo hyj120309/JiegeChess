@@ -43,6 +43,30 @@
       </div>
     </div>
 
+    <div class="hero" style="padding-top:0">
+      <div class="sub" style="margin-top:0">—— 扑克牌 ——</div>
+    </div>
+    <div class="module-grid">
+      <div class="mcard" data-game="paodekuai">
+        <div class="icon-area poker"><img src="/img/paodekuai.svg" alt="跑得快" onerror="this.remove()">快</div>
+        <h3>跑得快</h3>
+        <p>16 张版，3 人对战。<br>持 ♠3 者先出，先出完手牌者胜。</p>
+        <button class="btn primary">创建房间</button>
+      </div>
+      <div class="mcard" data-game="doudizhu">
+        <div class="icon-area poker"><img src="/img/doudizhu.svg" alt="斗地主" onerror="this.remove()">斗</div>
+        <h3>斗地主</h3>
+        <p>叫地主 / 抢地主，3 人对战。<br>炸弹翻倍，春天再翻倍。</p>
+        <button class="btn primary">创建房间</button>
+      </div>
+      <div class="mcard" data-game="norules">
+        <div class="icon-area poker"><img src="/img/norules.svg" alt="无规则" onerror="this.remove()">无</div>
+        <h3>无规则</h3>
+        <p>2~5 人自定义人数。<br>任意出牌或跳过，先出完者获胜。</p>
+        <button class="btn primary">创建房间</button>
+      </div>
+    </div>
+
     <div class="join-card">
       <div class="inner">
         <h4 style="margin:0 0 4px;color:#cfd3da">加入好友的房间</h4>
@@ -52,6 +76,9 @@
             <button data-g="gomoku" class="on">五子棋</button>
             <button data-g="xiangqi">象棋</button>
             <button data-g="go">围棋</button>
+            <button data-g="paodekuai">跑得快</button>
+            <button data-g="doudizhu">斗地主</button>
+            <button data-g="norules">无规则</button>
           </div>
           <button class="btn primary" id="btnJoin">加入房间</button>
         </div>
@@ -128,8 +155,25 @@
     </div>
   </dialog>
 
+  <div class="overlay hidden" id="overlayCount">
+    <div class="box">
+      <h3 style="margin:0 0 6px">选择游戏人数</h3>
+      <div class="room-hint" style="margin-bottom:14px">无规则支持 2~5 人对战</div>
+      <div class="opts">
+        <button class="btn primary" data-count="2">2 人</button>
+        <button class="btn primary" data-count="3">3 人</button>
+        <button class="btn primary" data-count="4">4 人</button>
+        <button class="btn primary" data-count="5">5 人</button>
+        <button class="btn ghost" id="btnCountCancel">取消</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/res/beercss/beer.min.js?v=3"></script>
   <script src="/res/beercss/material-dynamic-colors.min.js?v=3"></script>
+  <script src="/lib/cards.js?v=3"></script>
+  <script src="/js/cards-ui.js?v=3"></script>
+  <script src="/js/norules.js?v=3"></script>
   <script type="module" src="/js/app.js?v=3"></script>
 </body>
 </html>
