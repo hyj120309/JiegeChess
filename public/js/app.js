@@ -119,6 +119,12 @@ function onMsg(m) {
     case 'hints':
       if (app.module && app.module.onHints) app.module.onHints(m);
       break;
+    case 'hintResult':
+      if (app.module && app.module.onHint) app.module.onHint(m.cards || []);
+      break;
+    case 'hintUsed':
+      if (m.seat !== app.you) toast((m.name || ('玩家' + m.seat)) + ' 使用了提示');
+      break;
     case 'opponentReconnected':
       toast('对手已重新连接');
       break;

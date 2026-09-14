@@ -122,15 +122,8 @@
     var hintBtn = document.createElement('button');
     hintBtn.className = 'btn ghost small';
     hintBtn.textContent = '提示';
-    hintBtn.disabled = !myTurn || state.freeTurn;
-    hintBtn.onclick = function () {
-      if (!handCtl) return;
-      var lastCards = state.last ? state.last.cards : null;
-      var hint = C.findHint(state.hand, lastCards);
-      if (!hint) { api.toast('没有能压过的牌，建议「不要」'); return; }
-      handCtl.clearSelection();
-      handCtl.selectCards(hint);
-    };
+    hintBtn.disabled = !myTurn;
+    hintBtn.onclick = function () { api.send({ type: 'hint' }); };
     els.actions.appendChild(hintBtn);
 
     var playBtn = document.createElement('button');
@@ -216,6 +209,12 @@
       if (rc > lastRedeal) { api.toast('无人叫地主，重新发牌'); }
       lastRedeal = rc;
       state = st; render();
+    },
+    onHint: function (cards) {
+      if (!handCtl) return;
+      if (!cards || !cards.length) { api.toast('没有能压过的牌，建议「不要」'); return; }
+      handCtl.clearSelection();
+      handCtl.selectCards(cards);
     },
     reset: function () {
       state = null;

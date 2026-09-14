@@ -57,23 +57,14 @@
     hintBtn.className = 'btn ghost small';
     hintBtn.textContent = '提示';
     hintBtn.disabled = !myTurn;
-    hintBtn.onclick = function () {
-      if (!handCtl) return;
-      if (state.firstMove) {
-        // 首手必须含♠3: 直接选中♠3
-        if (state.hand.indexOf(0) >= 0) {
-          handCtl.clearSelection();
-          handCtl.selectCards([0]);
-        }
-        return;
-      }
-      var lastCards = state.last ? state.last.cards : null;
-      var hint = C.findHint(state.hand, lastCards);
-      if (!hint) { api.toast('没有能压过的牌，建议「不要」'); return; }
-      handCtl.clearSelection();
-      handCtl.selectCards(hint);
-    };
+    hintBtn.onclick = function () { api.send({ type: 'hint' }); };
     els.actions.appendChild(hintBtn);
+
+    // 强制压牌预告: 轮到我且非首手/非自由时, 提示是否有牌可压
+    var mustPlayNote = '';
+    if (myTurn && !state.firstMove && !state.freeTurn && state.last) {
+      if (C.findHint(state.hand, state.last.cards)) mustPlayNote = '· 你有牌可压必须出牌';
+    }
 
     var playBtn = document.createElement('button');
     playBtn.className = 'btn primary small';
@@ -92,7 +83,7 @@
     var passNote = (!state.freeTurn && state.passCount > 0) ? '（已 ' + state.passCount + ' 人不要）' : '';
     if (myTurn) {
       tip.textContent = state.firstMove ? '你持♠3先出，首手必须包含♠3'
-        : (state.freeTurn ? '轮到你自由出牌' : '轮到你：出牌压过上家或「不要」' + passNote);
+        : (state.freeTurn ? '轮到你自由出牌' : '轮到你：出牌压过上家或「不要」' + passNote + mustPlayNote);
     } else {
       tip.textContent = '等待其他玩家…' + passNote;
     }
@@ -140,6 +131,12 @@
       state = null;
     },
     onState: function (st) { state = st; render(); },
+    onHint: function (cards) {
+      if (!handCtl) return;
+      if (!cards || !cards.length) { api.toast('没有能压过的牌，建议「不要」'); return; }
+      handCtl.clearSelection();
+      handCtl.selectCards(cards);
+    },
     reset: function () {
       state = null;
       els.opponents.innerHTML = '';

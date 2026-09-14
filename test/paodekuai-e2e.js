@@ -151,6 +151,39 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const rm = await players[1].wait(m => m.type === 'rematch');
     ok('rematch重新发牌16张', rm.state.counts.every(c => c === 16));
 
+    // ---------- 强制压牌 + 提示广播 ----------
+    const rmA = await A.wait(m => m.type === 'rematch');
+    const fs2 = rmA.state.firstSeat;
+    const fp2 = players[fs2];
+    // 首手出♠3 — 清除残留消息防止stale state干扰
+    players.forEach(p => p.clear());
+    fp2.send({ type: 'move', move: { action: 'play', cards: [0] } });
+    const st2 = await players[(fs2 + 1) % 3].wait(m => m.type === 'state' && m.state.last);
+    ok('新局首手♠3出牌', st2.state.last.cards[0] === 0);
+    // 下家尝试pass → 强制压牌拒绝
+    players.forEach(p => p.clear());
+    const np = players[st2.state.turn - 1];
+    np.send({ type: 'move', move: { action: 'pass' } });
+    const perr = await np.wait(m => m.type === 'error');
+    ok('强制压牌: 有牌能压时pass被拒', perr.msg.indexOf('必须出牌') >= 0, perr.msg);
+    // np请求提示 → hintResult + 全房hintUsed广播
+    players.forEach(p => p.clear());
+    np.send({ type: 'hint' });
+    const hr = await np.wait(m => m.type === 'hintResult');
+    ok('提示返回可压牌组', Array.isArray(hr.cards) && hr.cards.length > 0, hr.cards);
+    ok('hintResult包含当前玩家', hr.seat === st2.state.turn);
+    // 验证广播: 任意其他玩家收到hintUsed
+    const otherIdx = (st2.state.turn - 1 + 1) % 3;
+    const otherP = players[otherIdx];
+    const otherHu = await otherP.wait(m => m.type === 'hintUsed', 3000);
+    ok('其他玩家收到hintUsed广播', otherHu && otherHu.seat === st2.state.turn);
+    // 非轮到者请求hint被拒
+    players.forEach(p => p.clear());
+    const notTurn = players[fs2];
+    notTurn.send({ type: 'hint' });
+    const herr = await notTurn.wait(m => m.type === 'error');
+    ok('非轮到者hint被拒', herr.msg.indexOf('轮到你') >= 0, herr.msg);
+
     A.ws.close(); B.ws.close(); Cc.ws.close();
     console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
   } finally {

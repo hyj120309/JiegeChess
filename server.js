@@ -278,6 +278,21 @@ function handleMessage(ws, raw) {
       send(ws, { type: 'hints', from: { x: fx, y: fy }, to: h.map(m => m.to) });
       break;
     }
+    case 'hint': {
+      if (!room) return send(ws, { type: 'error', msg: '不在房间中' });
+      if (!room.state) return send(ws, { type: 'error', msg: '对局尚未开始' });
+      if (ws.seat == null) return send(ws, { type: 'error', msg: '座位信息异常，请重新进入房间' });
+      const mod = room.game ? GAMES[room.game].mod : null;
+      if (!mod || !mod.hint) return send(ws, { type: 'error', msg: '该游戏不支持提示' });
+      const seat = ws.seat;
+      const res = mod.hint(room.state, seat + 1);
+      if (!res.ok) return send(ws, { type: 'error', msg: res.errors.join('；') });
+      // 私发提示结果
+      send(ws, { type: 'hintResult', cards: res.cards, seat: seat + 1 });
+      // 全房广播提示使用 (防静默作弊)
+      broadAll(room, { type: 'hintUsed', seat: seat + 1, name: room.names[seat] });
+      break;
+    }
     case 'pass': {
       if (!room || !room.state) return;
       const seat = ws.seat;
